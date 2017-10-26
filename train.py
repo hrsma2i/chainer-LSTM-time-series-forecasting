@@ -8,24 +8,8 @@
 import numpy as np
 import chainer.links as L
 import chainer.functions as F
-from chainer import Variable
+from chainer import Variable, training
 from chainer.iterators import SerialIterator
-
-# no need
-from chainer import Chain
-
-
-# In[ ]:
-
-class DemoModel(Chain):
-    def __init__(self):
-        super(DemoModel, self).__init__(
-            fc=L.Linear(1,1)
-        )
-        pass
-    
-    def __call__(self, x):
-        return x
 
 
 # In[ ]:
@@ -62,11 +46,23 @@ class LossSumMSEOverTime(L.Classifier):
 
 # In[ ]:
 
-X = np.arange(7)[:, np.newaxis, np.newaxis].transpose((1,0,2)).astype(np.float32)
-y = np.arange(7)[:, np.newaxis, np.newaxis].transpose((1,0,2)).astype(np.float32)
-
-model = DemoModel()
-model(X)
+class UpadaterRNN(training.StandardUpdater):
+    def __init__(self, train_iter, optimizer, deivce):
+        super(UpdaterRNN, self).__init__(train_iter, optimizer, device=device)
+        
+    # override
+    def updater_core(self):
+        train_iter = self.get_iterator('main')
+        optimizer = self.get_optimizer('main')
+        
+        X_STF, y_STF = train_iter.__next__()
+        
+        optimizer.target.predictor.reset_state()
+        loss = optimizer.target(X_STF, y_STF)
+        
+        optimizer.target.zerograds()
+        loss.backward()
+        optimizer.update()
 
 
 # In[ ]:
