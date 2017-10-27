@@ -13,6 +13,8 @@ from IPython.display import display
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
 from sklearn.model_selection import train_test_split
 
+from pymymod.chkprint import chkprint
+
 
 # In[ ]:
 
@@ -119,9 +121,9 @@ class Processer(object):
 if __name__=="__main__":
     series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
     series = series[:102]
-    print('raw', series.shape)
-    print(series[:5])
-    print()
+    chkprint('raw', series.shape)
+    chkprint(series[:5])
+    chkprint()
     
     diff = True
     scl  = 'minmax'
@@ -132,27 +134,27 @@ if __name__=="__main__":
     # diff
     if prcsr.diff:
         series = prcsr.difference(series)
-        print('diff', series.shape)
-        print(series[:5])
-        print()
+        chkprint('diff', series.shape)
+        chkprint(series[:5])
+        chkprint()
         
     # supervise
     X, y = prcsr.supervise(series)
-    print('X', X.shape)
-    print(X[:5])
-    print()
-    print('y', y.shape)
-    print(y[:5])
-    print()
+    chkprint('X', X.shape)
+    chkprint(X[:5])
+    chkprint()
+    chkprint('y', y.shape)
+    chkprint(y[:5])
+    chkprint()
     
     # train val split
     Xtr_Xvl_ytr_yvl = prcsr.train_val_split(X, y)
     names = ('')
     for seq in Xtr_Xvl_ytr_yvl:
-        print(dir(seq))
-        print('X', seq.shape)
-        print(seq[:5])
-        print()
+        chkprint(dir(seq))
+        chkprint('X', seq.shape)
+        chkprint(seq[:5])
+        chkprint()
 
 
 # In[ ]:
