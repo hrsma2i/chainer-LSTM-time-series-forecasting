@@ -271,7 +271,12 @@ def test_prcsr(log_trnsfmr, diff, sclr, ysclr):
 # In[ ]:
 
 def loop_prc(func):
-    prc
+    search_space={
+        'log':[True, False],
+        'diff':[True, False],
+        'sclr':['MinMax', 'MinMax+', 'Standard', None],
+        'ysclr':[True, False]
+    }
 
 
 # In[ ]:
