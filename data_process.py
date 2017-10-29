@@ -44,7 +44,7 @@ class Processer(object):
     def get_datasets(self, series):
         """
         # Param
-        - series (ndarray: (T, )): raw time series
+        - series (ndarray: (T, F)): raw time series
         T: time steps
         
         # Return
@@ -64,10 +64,16 @@ class Processer(object):
         """
         
         X_train, X_val, y_train, y_val = self.transform_train(series)
+        # change type
         X_train = X_train.astype(np.float32)
         X_val   =   X_val.astype(np.float32)
         y_train = y_train.astype(np.float32)
         y_val   =   y_val.astype(np.float32)
+        # change shape
+        X_train = X_train[np.newaxis, :, :]
+        X_val   =   X_val[np.newaxis, :, :]
+        y_train = y_train[np.newaxis, :, :]
+        y_val   =   y_val[np.newaxis, :, :]
         ds_train = list(zip(X_train, y_train))
         ds_val   = list(zip(X_val  , y_val  ))
         
@@ -77,17 +83,18 @@ class Processer(object):
     def transform_train(self, series):
         """
         # Param
-        - series (ndarray: (T, )): raw time series
+        - series  (ndarray: (T, F)): raw time series
         T: time steps
+        F: features
         
         # Return
-        - X_train (ndarray: (T, 1))
-        - X_val   (ndarray: (T, 1))
-        - y_train (ndarray: (T, 1))
-        - y_val   (ndarray: (T, 1))
+        - X_train (ndarray: (T, F))
+        - X_val   (ndarray: (T, F))
+        - y_train (ndarray: (T, F))
+        - y_val   (ndarray: (T, F))
         S: samples = 1
         T: time steps
-        F: features = 1
+        F: features
         
         # Flow
         - (difference)
@@ -116,15 +123,12 @@ class Processer(object):
     def log_transform(self, series):
         """
         # Param
-        - series (ndarray: (T, )): raw series
+        - series (ndarray: (T, F)): raw series
         
         # Return
-        - logged (ndarray: (T, )): logged series
+        - logged (ndarray: (T, F)): logged series
         """
-        # only when 1d feature (reshape)
-        logged = self.log_trnsfmr.transform(series.reshape(-1,1))
-        # only when 1d feature
-        logged = logged.flatten()
+        logged = self.log_trnsfmr.transform(series)
         
         return logged
             
@@ -132,21 +136,23 @@ class Processer(object):
     def difference(self, series):
         """
         # Param
-        - seires (ndarray: (T, )): raw series
+        - seires (ndarray: (T,   F))
         
         # Return
-        -  (ndarray: (T-1, )): diffed series
+        - diffed (ndarray: (T-1, F)): diffed series
         """
-        return series[1:] - series[:-1]
+        diffed =  series[1:] - series[:-1]
+        
+        return diffed
     
     def supervise(self, series):
         """
         # Param
-        - series (ndarray: (T, ))
+        - series (ndarray: (T, F))
         
         # Return
-        - X (ndarray: (T-1, )): input
-        - y (ndarray: (T-1, )): label
+        - X (ndarray: (T-1, F)): input
+        - y (ndarray: (T-1, F)): label
         """
         X = series[:-1]
         y = series[1:]
@@ -155,33 +161,27 @@ class Processer(object):
     def train_val_split(self, X, y):
         """
         # Param
-        - X (ndarray: (T, )): input
-        - y (ndarray: (T, )): label
+        - X (ndarray: (T, F)): input
+        - y (ndarray: (T, F)): label
         
         # Return
         - X_train, X_val, y_train, y_val 
-            (ndarray: (T_train/val, 1))
+            (ndarray: (T_train/val, F))
         """
         val_size = 0.3
         X_train, X_val, y_train, y_val = train_test_split(X, y,
                                                          test_size=val_size, shuffle=False)
-        # only when F = 1
-        X_train = X_train.reshape(-1,1)
-        X_val   =   X_val.reshape(-1,1)
-        y_train = y_train.reshape(-1,1)
-        y_val   =   y_val.reshape(-1,1)
-        
         return X_train, X_val, y_train, y_val
     
     def scale(self, X_train, X_val, y_train, y_val):
         """
         # Param
         - X_train, X_val, y_train, y_val 
-            (ndarray: (T, 1))
+            (ndarray: (T, F))
         
         # Return
         - X_train, X_val, y_train, y_val 
-            (ndarray: (T, 1)): scaled
+            (ndarray: (T, F)): scaled
         """
         
         X_train = X_train.astype(np.float32)
@@ -202,9 +202,12 @@ class Processer(object):
 
 # In[ ]:
 
-# TODO: test all combinations of diff x scale
+# TODO: test all combinations of preprocessing
 def test_prcsr(log_trnsfmr, diff, sclr, ysclr):
     series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
+    if series.ndim == 1:
+        print('ndim = 1')
+        series = series.reshape(-1, 1)
     series = series[:102]
     print('raw', series.shape)
     print(series[:5])
@@ -265,7 +268,32 @@ def test_prcsr(log_trnsfmr, diff, sclr, ysclr):
         print()
         
     # datasets for RNN
-    ds_train, ds_test = prcsr.get_datasets(series)
+    ds_train, ds_val = prcsr.get_datasets(series)
+    print('train samples', len(ds_train))
+    print('input (T, F)')
+    print(ds_train[0][0].shape)
+    print('label (T, F)')
+    print(ds_train[0][1].shape)
+    print()
+    print('val samples', len(ds_val))
+    print('input (T, F)')
+    print(ds_val[0][0].shape)
+    print('label (T, F)')
+    print(ds_val[0][1].shape)
+    print()
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    # configs
+    configs = {
+        'log_trnsfmr':FunctionTransformer(np.log1p),
+        'diff':True,
+        'sclr':MinMaxScaler(feature_range=(-1,1)),
+        'ysclr':MinMaxScaler(feature_range=(-1,1)),
+    } 
+    test_prcsr(**configs)
 
 
 # In[ ]:
@@ -281,13 +309,5 @@ def loop_prc(func):
 
 # In[ ]:
 
-if __name__=="__main__":
-    # configs
-    configs = {
-        'log_trnsfmr':FunctionTransformer(np.log1p),
-        'diff':True,
-        'sclr':MinMaxScaler(feature_range=(-1,1)),
-        'ysclr':MinMaxScaler(feature_range=(-1,1)),
-    } 
-    test_prcsr(**configs)
+
 
