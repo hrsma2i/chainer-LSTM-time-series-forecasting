@@ -24,7 +24,6 @@ from sklearn.model_selection import ParameterGrid, ParameterSampler
 
 from model import RNN
 from data_process import Processer
-from powerset import powerset
 
 
 # In[ ]:
@@ -171,17 +170,13 @@ def hp2json(hp):
 
 # In[ ]:
 
-def train(datasets, hp, n_epoch, out):
+def train(datasets, hp, out, n_epoch):
     """
     # Param
     - datasets (tuple): ds_train, ds_val
     - hp (dict): hyperparameters
+    - out (str): the path where log will be dumped
     - n_epoch: up to which training the model
-    - out: the path where models' snapshots will be saved
-    
-    # Flow
-    - train a model with given hyperparameters
-    - dump hyperparameteres as json
     """
     units = hp['units']
     optimizer = hp['optimizer']
@@ -219,12 +214,6 @@ def train(datasets, hp, n_epoch, out):
     trainer.run()
     
     
-    # dump hyperparameters
-    out_hp = os.path.join(out, 'hyperparameters.json')
-    hp_json = hp2json(hp)
-    json.dump(hp_json, open(out_hp, 'w'))
-    
-    return hp_json
 
 
 # In[ ]:
@@ -268,18 +257,23 @@ def tune(datasets, root, n_sample=10, n_epoch=5):
             'units': units,
             'optimizer': optimizer,
         }
-        out = os.path.join(root, hp2name(hp))
+        path_hp = os.path.join(root, hp2name(hp))
+        
         hp_json = hp2json(hp)
+        result.append(hp_json)
         
         display('sample{}'.format(i), pd.Series(hp_json))
         print('out', out)
         print()
         
         # training
-        hp_json = train(datasets=datasets, hp=hp, 
-                        n_epoch=n_epoch, out=out)
-        result.append(hp_json)
+        train(datasets=datasets, hp=hp, 
+              out=path_hp, n_epoch=n_epoch)
         
+        # dump hyperparameters
+        path_json = os.path.join(path_hp, 'hyperparameters.json')
+        json.dump(hp_json, open(path_json, 'w'))
+
         print(''.join(['-' * 60]))
 
     df = pd.DataFrame(result)
@@ -291,16 +285,20 @@ def tune(datasets, root, n_sample=10, n_epoch=5):
 if __name__=="__main__":
     prcsr = Processer()
     
-    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
+    root = 'result/test'
+    name_seq = 'airline_train'
+    
+    series = pd.read_csv('data/{}.csv'.format(name_seq)
+                         , header=None).values.flatten()
     if series.ndim == 1:
         print('features = 1')
         series = series.reshape(-1, 1)
     
-    root = 'result/test'
+    path_seq = os.path.join(root, name_seq)
     
     datasets = prcsr.get_datasets(series)
     
-    tune(datasets=datasets, root=root)
+    tune(datasets=datasets, root=path_seq)
 
 
 # In[ ]:
