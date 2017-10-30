@@ -203,7 +203,7 @@ class Processer(object):
 # In[ ]:
 
 # TODO: test all combinations of preprocessing
-def test_prcsr(log_trnsfmr, diff, sclr, ysclr):
+def test_pre_prcsr(log_trnsfmr, diff, sclr, ysclr):
     series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
     if series.ndim == 1:
         print('ndim = 1')
@@ -286,6 +286,39 @@ def test_prcsr(log_trnsfmr, diff, sclr, ysclr):
 # In[ ]:
 
 if __name__=="__main__":
+    import os
+    import json
+    from chainer import optimizers
+    from train import train, hp2name, hp2json
+    #prcsr = Processer(log_trnsfmr=log_trnsfmr, diff=diff, 
+    #                  sclr=sclr, ysclr=ysclr)
+    prcsr = Processer()
+
+    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
+    if series.ndim == 1:
+        print('ndim = 1')
+        series = series.reshape(-1, 1)
+
+    hp = {
+        'units':(3, 4, 3),
+        'optimizer':optimizers.Adam()
+    }    
+
+    root = 'result/test'
+
+    datasets = prcsr.get_datasets(series)
+    train(datasets, hp, out=root, n_epoch=300)
+
+    # dump hyperparameters
+    hp_json = hp2json(hp)
+    path_json = os.path.join(root, 'hyperparameters.json')
+    json.dump(hp_json, open(path_json, 'w'))
+
+
+# In[ ]:
+
+# preprocess
+if __name__=="__main__":
     # configs
     configs = {
         'log_trnsfmr':FunctionTransformer(np.log1p),
@@ -293,7 +326,7 @@ if __name__=="__main__":
         'sclr':MinMaxScaler(feature_range=(-1,1)),
         'ysclr':MinMaxScaler(feature_range=(-1,1)),
     } 
-    test_prcsr(**configs)
+    test_pre_prcsr(**configs)
 
 
 # In[ ]:
