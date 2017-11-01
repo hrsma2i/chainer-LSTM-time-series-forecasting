@@ -85,6 +85,7 @@ class UpdaterRNN(training.StandardUpdater):
 
 # In[ ]:
 
+# TODO 連続で勾配がeps以上上昇したら
 class ExploasionStoppingTrigger(object):
 
     def __init__(self, max_epoch, key, stop_condition=None, 
@@ -180,7 +181,7 @@ def train(datasets, hp, out, n_epoch):
     - hp (dict): hyperparameters
     - out (str): the path where "log" and "hyperparameters"
                 will be dumped
-    - n_epoch: up to which training the model
+    - n_epoch: up to which train the model
     """
     # dump hyperparameters
     if not os.path.exists(out):
@@ -277,7 +278,7 @@ def tune(root, datasets, n_sample=10, n_epoch=5):
 
 # In[ ]:
 
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 def loop_prc(root, series):
     """
