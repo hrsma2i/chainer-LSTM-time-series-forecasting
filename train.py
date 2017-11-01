@@ -88,7 +88,7 @@ class UpdaterRNN(training.StandardUpdater):
 class ExploasionStoppingTrigger(object):
 
     def __init__(self, max_epoch, key, stop_condition=None, 
-                 eps=1000, trigger=(1, 'epoch')):
+                 eps=10, trigger=(1, 'epoch')):
         self.max_epoch = max_epoch
         self.eps = eps
         self._key = key
@@ -172,12 +172,25 @@ def hp2json(hp):
 
 def train(datasets, hp, out, n_epoch):
     """
+    dump the given hyperparameters hp, and
+    train a model with the hyperparameters
+    
     # Param
     - datasets (tuple): ds_train, ds_val
     - hp (dict): hyperparameters
-    - out (str): the path where log will be dumped
+    - out (str): the path where "log" and "hyperparameters"
+                will be dumped
     - n_epoch: up to which training the model
     """
+    # dump hyperparameters
+    if not os.path.exists(out):
+        os.mkdir(out)
+    path_json = os.path.join(out, 'hyperparameters.json')
+    hp_json = hp2json(hp)
+    json.dump(hp_json, open(path_json, 'w'))
+    
+    
+    # training
     units = hp['units']
     optimizer = hp['optimizer']
     
@@ -212,13 +225,11 @@ def train(datasets, hp, out, n_epoch):
                 ))
     
     trainer.run()
-    
-    
 
 
 # In[ ]:
 
-def tune(datasets, root, n_sample=10, n_epoch=5):
+def tune(root, datasets, n_sample=10, n_epoch=5):
     # search space
     max_n_layer = 5
     max_n_unit  = 5
@@ -234,18 +245,6 @@ def tune(datasets, root, n_sample=10, n_epoch=5):
     result = []
     
     for i in range(n_sample):
-        # log uniform
-        #
-        #n_layer = np.exp(
-        #        np.random.uniform(np.log(1), np.log(max_n_layer))
-        #    ).astype(np.int)
-        #
-        #units = tuple(
-        #    np.exp(
-        #        np.random.uniform(np.log(1), np.log(max_n_unit))
-        #    ).astype(np.int)
-        #    for l in range(n_layer)
-        #)
         n_layer = np.random.randint(1, max_n_layer+1)
         units = tuple(
                     np.random.randint(1, max_n_unit+1)
@@ -263,17 +262,13 @@ def tune(datasets, root, n_sample=10, n_epoch=5):
         result.append(hp_json)
         
         display('sample{}'.format(i), pd.Series(hp_json))
-        print('out', out)
+        print('path_hp', path_hp)
         print()
         
         # training
         train(datasets=datasets, hp=hp, 
               out=path_hp, n_epoch=n_epoch)
         
-        # dump hyperparameters
-        path_json = os.path.join(path_hp, 'hyperparameters.json')
-        json.dump(hp_json, open(path_json, 'w'))
-
         print(''.join(['-' * 60]))
 
     df = pd.DataFrame(result)
@@ -282,26 +277,95 @@ def tune(datasets, root, n_sample=10, n_epoch=5):
 
 # In[ ]:
 
-if __name__=="__main__":
-    prcsr = Processer()
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, FunctionTransformer
+
+def loop_prc(root, series):
+    """
+    # Param
+    - root   (str): the path where results will be saved
+    - series (ndarray: (T, F)):
+    """
+    def routin(name_prc, prscr, root=root, series=series):
+        path_prc = os.path.join(root, name_prc)
+        datasets = prcsr.get_datasets(series)
+        tune(root=path_prc, datasets=datasets)
+        
+    name_prc = 'not_log'
+    prcsr = Processer(log=False)
+    routin(name_prc, prcsr)
+        
+    name_prc = 'not_diff'
+    prcsr = Processer(diff=False)
+    routin(name_prc, prcsr)
     
-    root = 'result/test'
-    name_seq = 'airline_train'
-    
-    series = pd.read_csv('data/{}.csv'.format(name_seq)
-                         , header=None).values.flatten()
-    if series.ndim == 1:
-        print('features = 1')
-        series = series.reshape(-1, 1)
-    
-    path_seq = os.path.join(root, name_seq)
-    
-    datasets = prcsr.get_datasets(series)
-    
-    tune(datasets=datasets, root=path_seq)
+    name_prc = 'not_diff'
+    prcsr = Processer(diff=False)
+    routin(name_prc, prcsr)
 
 
 # In[ ]:
 
+def loop_seq(root, prcsr=Processer()):
+    seqs = [
+        'airline',
+        'car',
+        'companyx',
+        'house',
+        'winnebago'
+    ]
+    
+    for name_seq in seqs:
 
+        series = pd.read_csv('data/{}_train.csv'.format(name_seq)
+                             , header=None).values.flatten()
+        if series.ndim == 1:
+            print('features = 1')
+            series = series.reshape(-1, 1)
+
+        path_seq = os.path.join(root, name_seq)
+        print(path_seq)
+        if not os.path.exists(path_seq):
+            os.mkdir(path_seq)
+
+        datasets = prcsr.get_datasets(series)
+
+        tune(root=path_seq, datasets=datasets)
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    root = 'result/test_seq_loop'
+    prcsr = Processer()
+    loop_seq(root=root, prcsr=prcsr)
+    # 
+
+
+# In[ ]:
+
+# train a model
+if __name__=="__main__":
+    #prcsr = Processer(log_trnsfmr=log_trnsfmr, diff=diff, 
+    #                  sclr=sclr, ysclr=ysclr)
+    lr = 0.01
+    prcsr = Processer()
+
+    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
+    if series.ndim == 1:
+        print('ndim = 1')
+        series = series.reshape(-1, 1)
+
+    hp = {
+        'units':(3, 7, 3),
+        'optimizer':optimizers.Adam(alpha=lr)
+    }    
+    print(hp['optimizer'].alpha)
+    
+
+    root = 'result/test/adam{}'.format(lr)
+
+    datasets = prcsr.get_datasets(series)
+    
+    # training
+    #train(datasets, hp, out=root, n_epoch=300)
 
