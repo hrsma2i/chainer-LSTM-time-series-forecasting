@@ -220,8 +220,8 @@ def train(datasets, hp, out, n_epoch):
     trainer.extend(extensions.LogReport())
     trainer.extend(extensions.snapshot_object(model.predictor, 
                                                filename='model_epoch-{.updater.epoch}'))
-    trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'],
-                                        x_key='epoch', file_name='loss.png'))
+    #trainer.extend(extensions.PlotReport(['main/loss', 'validation/main/loss'],
+    #                                    x_key='epoch', file_name='loss.png'))
     trainer.extend(extensions.PrintReport(
                     ['epoch','main/loss','validation/main/loss']
                 ))
