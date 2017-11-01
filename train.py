@@ -279,30 +279,31 @@ def tune(root, datasets, n_sample=10, n_epoch=5):
 
 # In[ ]:
 
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+# train a model
+if __name__=="__main__":
+    #prcsr = Processer(log_trnsfmr=log_trnsfmr, diff=diff, 
+    #                  sclr=sclr, ysclr=ysclr)
+    lr = 0.01
+    prcsr = Processer()
 
-def loop_prc(root, series):
-    """
-    # Param
-    - root   (str): the path where results will be saved
-    - series (ndarray: (T, F)):
-    """
-    def routin(name_prc, prscr, root=root, series=series):
-        path_prc = os.path.join(root, name_prc)
-        datasets = prcsr.get_datasets(series)
-        tune(root=path_prc, datasets=datasets)
-        
-    name_prc = 'not_log'
-    prcsr = Processer(log=False)
-    routin(name_prc, prcsr)
-        
-    name_prc = 'not_diff'
-    prcsr = Processer(diff=False)
-    routin(name_prc, prcsr)
+    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
+    if series.ndim == 1:
+        print('ndim = 1')
+        series = series.reshape(-1, 1)
+
+    hp = {
+        'units':(3, 7, 3),
+        'optimizer':optimizers.Adam(alpha=lr)
+    }    
+    print(hp['optimizer'].alpha)
     
-    name_prc = 'not_diff'
-    prcsr = Processer(diff=False)
-    routin(name_prc, prcsr)
+
+    root = 'result/test/adam{}'.format(lr)
+
+    datasets = prcsr.get_datasets(series)
+    
+    # training
+    #train(datasets, hp, out=root, n_epoch=300)
 
 
 # In[ ]:
@@ -332,42 +333,4 @@ def loop_seq(root, prcsr=Processer()):
         datasets = prcsr.get_datasets(series)
 
         tune(root=path_seq, datasets=datasets)
-
-
-# In[ ]:
-
-if __name__=="__main__":
-    root = 'result/test_seq_loop'
-    prcsr = Processer()
-    loop_seq(root=root, prcsr=prcsr)
-    # 
-
-
-# In[ ]:
-
-# train a model
-if __name__=="__main__":
-    #prcsr = Processer(log_trnsfmr=log_trnsfmr, diff=diff, 
-    #                  sclr=sclr, ysclr=ysclr)
-    lr = 0.01
-    prcsr = Processer()
-
-    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
-    if series.ndim == 1:
-        print('ndim = 1')
-        series = series.reshape(-1, 1)
-
-    hp = {
-        'units':(3, 7, 3),
-        'optimizer':optimizers.Adam(alpha=lr)
-    }    
-    print(hp['optimizer'].alpha)
-    
-
-    root = 'result/test/adam{}'.format(lr)
-
-    datasets = prcsr.get_datasets(series)
-    
-    # training
-    #train(datasets, hp, out=root, n_epoch=300)
 
