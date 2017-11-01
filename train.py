@@ -234,7 +234,7 @@ def train(datasets, hp, out, n_epoch):
 def tune(root, datasets, n_sample=10, n_epoch=5):
     # search space
     max_n_layer = 5
-    max_n_unit  = 5
+    max_n_unit  = 10
     opts = [
         optimizers.SGD(),
         optimizers.Adam(),
