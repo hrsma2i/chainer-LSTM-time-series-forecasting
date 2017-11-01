@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 get_ipython().run_line_magic('matplotlib', 'inline')
+import IPython.display as display
 import chainer.links as L
 import chainer.functions as F
 import chainer
