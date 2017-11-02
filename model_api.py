@@ -95,14 +95,7 @@ def select_hp(root, verbose=False):
 
 # In[ ]:
 
-# select hyperparamter
-root = 'result/test/airline/default'
-print(select_hp(root, verbose=True))
-
-
-# In[ ]:
-
-def predict(num_pred, model, prcsr, path_series_train):
+def predict(num_pred, model, prcsr, path_csv_train):
     
     series = pd.read_csv(path_series_train, header=None).values
     X_train, X_val, _, _ = prcsr.transform_train(series)
@@ -137,6 +130,45 @@ def predict(num_pred, model, prcsr, path_series_train):
         pred = np.expm1(pred)
         
     return pred
+
+
+# In[ ]:
+
+# fitting test
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'default'
+    
+    name_csv_train = '{}_train.csv'.format(name_seq)
+    path_csv_train = os.path.join(data_root, name_csv_train)
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    
+    prcsr = Processer()
+    
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    
+    name_hp = select_hp(root=path_prc)
+    
+    path_hp = os.path.join(path_prc, name_hp)
+    epoch = select_epoch(root=path_hp)
+    
+    model = get_learned_model(root=path_hp, epoch=epoch)
+    
+    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    obs_test = pd.read_csv(path_series_test, 
+                           header=None).values.flatten()
+    
+    print(name_hp)
+    print(epoch)
+    plt.figure(figsize=(20,10))
+    plt.plot(pred_test, label='pred')
+    plt.plot(obs_test,  label='obs')
+    plt.legend()
 
 
 # In[ ]:
@@ -210,32 +242,6 @@ if __name__=="__main__":
     plt.axvline(y_train.shape[0], color='red')
     plt.plot( obs_train)
     plt.plot(pred_train)
-
-
-# In[ ]:
-
-# fitting test
-if __name__=="__main__":
-    
-    name_seq = 'airline'
-    path_series_train = 'data/{}_train.csv'.format(name_seq)
-    path_series_test  =  'data/{}_test.csv'.format(name_seq)
-    
-    prcsr = Processer()
-    
-    root = 'result/test/adam0.01'
-    
-    epoch = select_epoch(root=root)
-    model = get_learned_model(root=root, epoch=epoch)
-    
-    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
-                        path_series_train=path_series_train)
-    obs_test = pd.read_csv(path_series_test, 
-                           header=None).values.flatten()
-    
-    plt.figure(figsize=(20,10))
-    plt.plot(pred_test)
-    plt.plot(obs_test)
 
 
 # In[ ]:
