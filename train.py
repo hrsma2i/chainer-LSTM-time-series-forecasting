@@ -186,7 +186,7 @@ def train(datasets, hp, out, n_epoch):
     """
     # dump hyperparameters
     if not os.path.exists(out):
-        os.mkdir(out)
+        os.makedirs(out)
     path_json = os.path.join(out, 'hyperparameters.json')
     hp_json = hp2json(hp)
     json.dump(hp_json, open(path_json, 'w'))
@@ -279,6 +279,27 @@ def tune(root, datasets, n_sample=10, n_epoch=5):
 
 # In[ ]:
 
+# tune a model
+
+if __name__=="__main__":
+    data_root = 'data'
+    name_seq = 'airline'
+    root = "result/test/airline/default"
+    if os.path.exists(root):
+        os.mkdir()
+    
+    path_csv = os.path.join(data_root, '{}_train.csv'.format(name_seq))
+    series = pd.read_csv(path_csv, header=None).values
+    
+    prcsr = Processer()
+    
+    datasets = prcsr.get_datasets(series)
+    
+    tune(root=root)
+
+
+# In[ ]:
+
 # train a model
 if __name__=="__main__":
     #prcsr = Processer(log_trnsfmr=log_trnsfmr, diff=diff, 
@@ -304,4 +325,14 @@ if __name__=="__main__":
     
     # training
     #train(datasets, hp, out=root, n_epoch=300)
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
 
