@@ -6,6 +6,8 @@
 # In[ ]:
 
 import os
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -226,6 +228,49 @@ class Processer(object):
 
 # In[ ]:
 
+def name2prc(name_prc):
+    table = {
+        'default':{
+            'log':True,
+            'diff':True,
+            'sclr':MinMaxScaler((-1,1)),
+            'ysclr':MinMaxScaler((-1,1)),
+        } 
+    }
+    
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['log'] = False
+    table['not_log'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['diff'] = False
+    table['not_diff'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['sclr'] = MinMaxScaler((0,1))
+    tmp_prc['ysclr'] = MinMaxScaler((0,1))
+    table['minmax+'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['sclr'] = StandardScaler((0,1))
+    tmp_prc['ysclr'] = StandardScaler((0,1))
+    table['standard'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['sclr'] = None
+    tmp_prc['ysclr'] = None
+    table['not_scale'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['ysclr'] = None
+    table['not_label_scale'] = tmp_prc
+    
+    return table[name_prc]
+
+
+# In[ ]:
+
 def test_pre_prcsr(log, diff, sclr, ysclr):
     series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
     if series.ndim == 1:
@@ -310,14 +355,7 @@ def test_pre_prcsr(log, diff, sclr, ysclr):
 
 # preprocess
 if __name__=="__main__":
-    # configs
-    configs = {
-        'log':True,
-        'diff':True,
-        'sclr':MinMaxScaler(feature_range=(-1,1)),
-        'ysclr':MinMaxScaler(feature_range=(-1,1)),
-    } 
-    test_pre_prcsr(**configs)
+    test_pre_prcsr(**name2prc('minmax+'))
 
 
 # In[ ]:
