@@ -44,52 +44,7 @@ pattern = r'model_epoch-[1-9]+'
 
 def predict(num_pred, model, prcsr, path_series_train):
     
-    series = pd.read_csv(path_series_train, header=None).values.flatten()
-    if series.ndim == 1:
-        print('ndim = 1')
-        series = series.reshape(-1, 1)
-    X_train, X_val, _, _ = prcsr.transform_train(series)
-    X_train = np.concatenate((X_train, X_val), axis=0)
-    
-    # setup hidden state for predicting test
-    model.reset_state()
-    for Xt in X_train:
-        _ = model(Xt.reshape(-1, 1)).data[0]
-    
-    # make prediction
-    pred = []
-    p_t = X_train[-1]
-    for _ in range(num_pred):
-        p_t = model(p_t.reshape(-1, 1)).data[0]
-        pred.append(p_t)
-    pred = np.array(pred)
-    
-    if prcsr.ysclr is not None:
-        pred = prcsr.inverse_scale(pred)
-
-    if prcsr.diff:
-        pred_diff = pred.copy()
-        pred = []
-        p_t = prcsr.last_before_diff
-        for d_t in pred_diff:
-            p_t += d_t
-            pred.append(p_t.copy())
-        pred = np.array(pred)
-    
-    if prcsr.log:
-        pred = np.expm1(pred)
-        
-    return pred
-
-
-# In[ ]:
-
-def predict(num_pred, model, prcsr, path_series_train):
-    
-    series = pd.read_csv(path_series_train, header=None).values.flatten()
-    if series.ndim == 1:
-        print('ndim = 1')
-        series = series.reshape(-1, 1)
+    series = pd.read_csv(path_series_train, header=None).values
     X_train, X_val, _, _ = prcsr.transform_train(series)
     X_train = np.concatenate((X_train, X_val), axis=0)
     
