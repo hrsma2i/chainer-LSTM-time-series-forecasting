@@ -305,32 +305,3 @@ if __name__=="__main__":
     # training
     #train(datasets, hp, out=root, n_epoch=300)
 
-
-# In[ ]:
-
-def loop_seq(root, prcsr=Processer()):
-    seqs = [
-        'airline',
-        'car',
-        'companyx',
-        'house',
-        'winnebago'
-    ]
-    
-    for name_seq in seqs:
-
-        series = pd.read_csv('data/{}_train.csv'.format(name_seq)
-                             , header=None).values.flatten()
-        if series.ndim == 1:
-            print('features = 1')
-            series = series.reshape(-1, 1)
-
-        path_seq = os.path.join(root, name_seq)
-        print(path_seq)
-        if not os.path.exists(path_seq):
-            os.mkdir(path_seq)
-
-        datasets = prcsr.get_datasets(series)
-
-        tune(root=path_seq, datasets=datasets)
-
