@@ -51,8 +51,40 @@ def select_epoch(root):
 
 # In[ ]:
 
-root = 'result/test/adam0.01/'
-select_epoch(root)
+def select_hp(root, verbose=False):
+    best_n = 10
+    key = 'validation/main/loss'
+
+    names_hp = (b.name for b in os.scandir(root) if b.is_dir())
+
+    hp_score = []
+
+    for name_hp in names_hp:
+        path_hp = os.path.join(root, name_hp)
+        path_log = os.path.join(path_hp, 'log')
+        df_log = pd.read_json(path_log)
+        
+        scores = df_log[key].sort_values().values
+        eval_score = np.mean(scores[:best_n])
+        hp_score.append((name_hp, eval_score))
+
+    hp_score = pd.DataFrame(hp_score,
+                           columns=['hyperparamter', key])
+    hp_score = hp_score.sort_values(key)
+    hp_score = hp_score.reset_index(drop=True)
+    best_hp = hp_score.ix[0, 0]
+    
+    if verbose:
+        display(hp_score)
+    
+    return best_hp
+
+
+# In[ ]:
+
+# select hyperparamter
+root = 'result/test/airline/default'
+print(select_hp(root, verbose=True))
 
 
 # In[ ]:
