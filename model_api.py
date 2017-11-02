@@ -97,7 +97,7 @@ def select_hp(root, verbose=False):
 
 def predict(num_pred, model, prcsr, path_csv_train):
     
-    series = pd.read_csv(path_series_train, header=None).values
+    series = pd.read_csv(path_csv_train, header=None).values
     X_train, X_val, _, _ = prcsr.transform_train(series)
     X_train = np.concatenate((X_train, X_val), axis=0)
     
@@ -139,8 +139,9 @@ if __name__=="__main__":
     data_root = 'data'
     pred_baseline_root = 'data/pred_baseline'
     root      = 'result/test'
-    name_seq  = 'airline'
+    name_seq  = 'car'
     name_prc  = 'default'
+    from others.score import Scorer
     
     # observation
     name_csv_test  = '{}_test.csv'.format(name_seq)
@@ -175,6 +176,14 @@ if __name__=="__main__":
     pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
                         path_csv_train=path_csv_train)
     
+    scrr = Scorer(obs_test, pred_test, do_adjust=True)
+    scrr_baseline = Scorer(obs_test, pred_test_baseline, do_adjust=True)
+    scores = {
+        'LSTM':scrr.get_all(),
+        'baseline':scrr_baseline.get_all()
+    }
+    df_score = pd.DataFrame(scores)
+    display(df_score)
     
     # plot fitting
     plt.figure(figsize=(20,10))
