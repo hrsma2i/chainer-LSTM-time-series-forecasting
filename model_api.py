@@ -134,6 +134,58 @@ def predict(num_pred, model, prcsr, path_csv_train):
 
 # In[ ]:
 
+# comparison with baseline
+if __name__=="__main__":
+    data_root = 'data'
+    pred_baseline_root = 'data/pred_baseline'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'default'
+    
+    # observation
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    # pred baseline
+    name_csv_test  = 'pred_baseline_{}.csv'.format(name_seq)
+    path_csv_test  = os.path.join(pred_baseline_root, name_csv_test)
+    pred_test_baseline = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    # pred LSTM
+    name_csv_train = '{}_train.csv'.format(name_seq)
+    path_csv_train = os.path.join(data_root, name_csv_train)
+    
+    prcsr = Processer()
+    
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    
+    name_hp = select_hp(root=path_prc)
+    print(name_hp)
+    
+    path_hp = os.path.join(path_prc, name_hp)
+    epoch = select_epoch(root=path_hp)
+    print('epoch', epoch)
+    
+    model = get_learned_model(root=path_hp, epoch=epoch)
+    
+    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    
+    
+    # plot fitting
+    plt.figure(figsize=(20,10))
+    plt.plot(obs_test,  label='obs')
+    plt.plot(pred_test, label='pred')
+    plt.plot(pred_test_baseline, label='baseline')
+    plt.legend()
+
+
+# In[ ]:
+
 # fitting test
 if __name__=="__main__":
     data_root = 'data'
@@ -160,7 +212,7 @@ if __name__=="__main__":
     
     pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
                         path_csv_train=path_csv_train)
-    obs_test = pd.read_csv(path_series_test, 
+    obs_test = pd.read_csv(path_csv_test, 
                            header=None).values.flatten()
     
     print(name_hp)
