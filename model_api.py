@@ -7,10 +7,10 @@
 
 import os
 import json
-import re
 
 import numpy as np
 import pandas as pd
+pd.set_option("display.max_rows", 10000)
 import matplotlib.pyplot as plt
 get_ipython().run_line_magic('matplotlib', 'inline')
 from chainer import serializers
@@ -34,10 +34,25 @@ def get_learned_model(root, epoch):
 
 # In[ ]:
 
-root = 'result/test/adam0.1/'
-pattern = r'model_epoch-[1-9]+'
-[ l for l in os.listdir(result_path) if re.match(pattern, l)]
+def select_epoch(root):
+    """
+    Select epoch in which model have best val loss
+    
+    # Param
+    - root (str): path where result is
+    """
+    path_log = os.path.join(root, 'log')
+    df_log = pd.read_json(path_log)
+    
+    best_idx = df_log['validation/main/loss'].argmin()
+    epoch = int(df_log['epoch'].ix[best_idx])
+    return epoch
 
+
+# In[ ]:
+
+root = 'result/test/adam0.01/'
+select_epoch(root)
 
 
 # In[ ]:
