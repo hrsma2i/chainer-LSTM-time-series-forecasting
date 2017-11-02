@@ -231,7 +231,10 @@ def train(datasets, hp, out, n_epoch):
 
 # In[ ]:
 
-def tune(root, datasets, n_sample=10, n_epoch=5):
+def tune(root, datasets, n_sample=100, n_epoch=300):
+    print('n_sample', n_sample)
+    print('n_epoch', n_epoch)
+    
     # search space
     max_n_layer = 5
     max_n_unit  = 10
@@ -283,10 +286,13 @@ def tune(root, datasets, n_sample=10, n_epoch=5):
 
 if __name__=="__main__":
     data_root = 'data'
+    root = 'result/test'
     name_seq = 'airline'
-    root = "result/test/airline/default"
-    if os.path.exists(root):
-        os.mkdir()
+    name_prc = 'default'
+    n_sample = 10
+    n_epoch = 100
+    
+    path_prc = os.path.join(root, name_seq, name_prc)
     
     path_csv = os.path.join(data_root, '{}_train.csv'.format(name_seq))
     series = pd.read_csv(path_csv, header=None).values
@@ -295,7 +301,8 @@ if __name__=="__main__":
     
     datasets = prcsr.get_datasets(series)
     
-    tune(root=root)
+    tune(root=path_prc, datasets=datasets,
+        n_sample=n_sample, n_epoch=n_epoch)
 
 
 # In[ ]:
