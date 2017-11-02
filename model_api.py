@@ -36,10 +36,13 @@ def get_learned_model(root, epoch):
 
 def select_epoch(root):
     """
-    Select epoch in which model have best val loss
+    Select epoch in which the model have best val loss
     
     # Param
-    - root (str): path where result is
+    - root (str): path where the model's weights each epoch are
+    
+    # Return
+    - epoch (int): best epoch
     """
     path_log = os.path.join(root, 'log')
     df_log = pd.read_json(path_log)
@@ -52,6 +55,16 @@ def select_epoch(root):
 # In[ ]:
 
 def select_hp(root, verbose=False):
+    """
+    Select hyperparameter with which 
+    the model have best mean of best-10 val loss
+    
+    # Param
+    - root (str): path where the model's weights each epoch are
+    
+    # Return
+    - best_hp (str): best hyperparameters dir name
+    """
     best_n = 10
     key = 'validation/main/loss'
 
