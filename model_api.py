@@ -27,7 +27,7 @@ def get_learned_model(root, epoch):
     
     model = RNN(units)
     path_weight = os.path.join(root, 'model_epoch-{}'.format(epoch))
-    serializers.load_npz(paht_weight, model)
+    serializers.load_npz(path_weight, model)
     
     return model
 
@@ -180,13 +180,8 @@ if __name__=="__main__":
     
     root = 'result/test/adam0.01'
     
-    hp = json.load(open(os.path.join(root, 'hyperparameters.json')))
-    units = hp['units']
-    
-    model = RNN(units)
-    epoch = 65
-    path_weight = os.path.join(root, 'model_epoch-{}'.format(epoch))
-    serializers.load_npz(path_weight, model)
+    epoch = select_epoch(root=root)
+    model = get_learned_model(root=root, epoch=epoch)
     
     pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
                         path_series_train=path_series_train)
