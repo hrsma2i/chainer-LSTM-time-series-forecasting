@@ -174,7 +174,7 @@ def setup(data_root, root, name_seq, name_prc):
 # In[ ]:
 
 class Predictor(object):
-    def __init__(self, model, prcser, path_csv_train):
+    def __init__(self, model, prcsr, path_csv_train):
         self.obss  = {}
         self.preds = {}
         
@@ -258,8 +258,10 @@ def plot_fitting(dict_arrays, title=None):
     if title is not None:
         plt.title(title)
     for k, v in dict_arrays.items():
-        plt.plot(v, label=k)
+        if v is not None:
+            plt.plot(v, label=k)
     plt.legend()
+    plt.show()
 
 
 # In[ ]:
@@ -317,6 +319,102 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
+def verify_prc(data_root, root, name_seq, name_prc, verbose=False):
+    # obs test (must be written earier than setup_and_predict)
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    def setup_and_predict(name_prc):
+        # setup
+        model, prcsr, path_csv_train = setup(data_root=data_root, 
+                                             root=root,
+                                             name_seq=name_seq,
+                                             name_prc=name_prc)
+        # pred/obs train/val
+        prdctr = Predictor(model=model, prcsr=prcsr,
+                           path_csv_train=path_csv_train)
+        # pred test
+        pred_test = predict(num_pred=len(obs_test), 
+                            model=model, prcsr=prcsr,
+                            path_csv_train=path_csv_train)
+        return prdctr, pred_test
+    
+    
+    prdctr, pred_test = setup_and_predict(name_prc)
+    prdctr_def, pred_test_def = setup_and_predict('default')
+    
+    
+    def score_and_plot(trvlts, obs, pred, pred_def, key='raw'):
+        # score
+        scrr = Scorer(obs, pred, do_adjust=True)
+        scrr_def = Scorer(obs, pred_def, do_adjust=True)
+        scores = {
+            name_prc:scrr.get_all(),
+            'defult':scrr_def.get_all()
+        }
+        df_score = pd.DataFrame(scores)
+        display(df_score)
+        
+        # plot fitting
+        d_plot = {
+            'obs':obs,
+            name_prc:pred,
+            'dafault':pred_def, 
+        }
+        plot_fitting(d_plot, title=trvlts+' '+key)
+        
+    def plot_inverse(name, prdctr):
+        keys = prdctr.preds.keys()
+        for k in keys:
+            print(name, k)
+            # train
+            obs_train = prdctr.get_obs_train(k)
+            pred_train = prdctr.get_pred_train(k)
+            d_plot = {
+                'obs':obs_train,
+                name:pred_train,
+            }
+            plot_fitting(d_plot, title=name+' train '+k)
+            # val
+            obs_val = prdctr.get_obs_val(k)
+            pred_val = prdctr.get_pred_val(k)
+            d_plot = {
+                'obs':obs_val,
+                name:pred_val,
+            }
+            plot_fitting(d_plot, title=name+' val '+k)
+    
+    k = 'raw'
+    # train
+    obs_train = prdctr_def.get_obs_train(k)
+    pred_train = prdctr.get_pred_train(k)
+    pred_train_def = prdctr_def.get_pred_train(k)
+    score_and_plot('train', obs=obs_train,
+                   pred=pred_train,
+                   pred_def=pred_train_def, key=k)
+
+    # val
+    obs_val = prdctr_def.get_obs_val(k)
+    pred_val = prdctr.get_pred_val(k)
+    pred_val_def = prdctr_def.get_pred_val(k)
+    score_and_plot('val', obs=obs_val,
+                   pred=pred_val,
+                   pred_def=pred_val_def, key=k)
+        
+    # test
+    score_and_plot('test', obs=obs_test,
+                   pred=pred_test,
+                   pred_def=pred_test_def, key=k)
+    
+    if verbose:
+        plot_inverse('default', prdctr_def)
+        plot_inverse(name_prc,  prdctr)
+
+
+# In[ ]:
+
 # test compare
 if __name__=="__main__":
     name_seq  = 'airline'
@@ -332,48 +430,17 @@ compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
+# test verify_prc
 if __name__=="__main__":
-    data_root = 'data'
-    root      = 'result/test'
     name_seq  = 'airline'
     name_prc  = 'not_log'
+    verbose = True
     
-    model, prcsr, path_csv_train = setup(data_root=data_root, 
-                                         root=root,
-                                         name_seq=name_seq,
-                                         name_prc=name_prc)
-    # pred/obs train/val
-    prdctr = Predictor(model=model, prcser=prcsr,
-                       path_csv_train=path_csv_train)
+    data_root = 'data'
+    root      = 'result/test'
     
-    # obs test
-    name_csv_test  = '{}_test.csv'.format(name_seq)
-    path_csv_test  = os.path.join(data_root, name_csv_test)
-    obs_test = pd.read_csv(path_csv_test, 
-                           header=None).values.flatten()
-    # pred test
-    pred_test = predict(num_pred=len(obs_test), 
-                        model=model, prcsr=prcsr,
-                        path_csv_train=path_csv_train)
-    
-    for k in prdctr.preds.keys():
-        d_plot = {
-            'obs':prdctr.get_obs_train(k),
-            'pred':prdctr.get_pred_train(k),
-        }
-        plot_fitting(d_plot, title='train_'+k)
-        
-        d_plot = {
-            'obs':prdctr.get_obs_val(k),
-            'pred':prdctr.get_pred_val(k),
-        }
-        plot_fitting(d_plot, title='val_'+k)
-        
-    d_plot = {
-        'obs':pred_test,
-        'pred':obs_test,
-    }
-    plot_fitting(d_plot, title='test_'+k)
+verify_prc(data_root=data_root, root=root, name_seq=name_seq,
+           name_prc=name_prc, verbose=verbose)
 
 
 # In[ ]:
