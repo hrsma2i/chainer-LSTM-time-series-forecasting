@@ -369,9 +369,24 @@ if __name__=="__main__":
     name_seq  = 'airline'
     name_prc  = 'not_log'
     
-    config = setup(data_root=data_root, root=root,
-                   name_seq=name_seq, name_prc=name_prc)
-    prdctr = Predictor(*config)
+    model, prcsr, path_csv_train = setup(data_root=data_root, 
+                                         root=root,
+                                         name_seq=name_seq,
+                                         name_prc=name_prc)
+    # pred/obs train/val
+    prdctr = Predictor(model=model, prcser=prcsr,
+                       path_csv_train=path_csv_train)
+    
+    # obs test
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    # pred test
+    pred_test = predict(num_pred=len(obs_test), 
+                        model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    
     for k in prdctr.preds.keys():
         d_plot = {
             'obs':prdctr.get_obs_train(k),
@@ -384,14 +399,12 @@ if __name__=="__main__":
             'pred':prdctr.get_pred_val(k),
         }
         plot_fitting(d_plot, title='val_'+k)
-
-
-# In[ ]:
-
-d = {
-    'a':np.arange(10).reshape(-1,1),
-    'b':np.arange(0,20,2).reshape(-1,1),
-}
+        
+    d_plot = {
+        'obs':pred_test,
+        'pred':obs_test,
+    }
+    plot_fitting(d_plot, title='test_'+k)
 
 
 # In[ ]:
