@@ -245,39 +245,45 @@ if __name__=="__main__":
 
 # In[ ]:
 
-# fitting train val
-class Verifier(object):
-    def __init__(self, data_root, root, name_seq, name_prc):
+def setup(data_root, root, name_seq, name_prc):
+    """
+    Make variables to initialize Predictor
+    """
+    
+    # setup path_csv_train
+    name_csv_train = '{}_train.csv'.format(name_seq)
+    path_csv_train = os.path.join(data_root, name_csv_train)
+
+    # setup processer 
+    prcsr = Processer(**name2prc(name_prc))
+
+    # setup model
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    name_hp = select_hp(root=path_prc)
+    path_hp = os.path.join(path_prc, name_hp)
+    epoch = select_epoch(root=path_hp)
+    print(path_hp)
+    print('epoch', epoch)
+    model = get_learned_model(root=path_hp, epoch=epoch)
+    
+    return model, prcsr, path_csv_train
+
+
+# In[ ]:
+
+class Predictor(object):
+    def __init__(self, model, prcser, path_csv_train):
         self.obss  = {}
         self.preds = {}
         
-        name_csv_train = '{}_train.csv'.format(name_seq)
-        path_csv_train = os.path.join(data_root, name_csv_train)
         series = pd.read_csv(path_csv_train, header=None).values
-
-        # setup Processer and datasets
-        prcsr = Processer(**name2prc(name_prc))
         X_train, X_val, y_train, y_val = prcsr.transform_train(series)
+        
         X_train = np.concatenate((X_train, X_val), axis=0)
         obs_train = np.concatenate((y_train, y_val), axis=0)
         
         self.n_train = y_train.shape[0]
-        
-        
-        # setup model
-        path_seq = os.path.join(root, name_seq)
-        path_prc = os.path.join(path_seq, name_prc)
-
-        name_hp = select_hp(root=path_prc)
-
-        path_hp = os.path.join(path_prc, name_hp)
-        epoch = select_epoch(root=path_hp)
-
-        print(path_hp)
-        print('epoch', epoch)
-
-        model = get_learned_model(root=path_hp, epoch=epoch)
-
 
         # predict
         pred_train = []
@@ -308,6 +314,7 @@ class Verifier(object):
             obs_train  = before_diff[2:] 
 
             obs1_train = before_diff[1:-1]
+            # TODO just pred + obs1 and delete inverse_diff_given
             pred_train = prcsr.inverse_diff_given(pred_train, obs1_train)
             
             self.obss['undiff'] = obs_train.copy()
@@ -324,25 +331,25 @@ class Verifier(object):
         self.obss['raw'] = obs_train.copy()
         self.preds['raw'] = pred_train.copy()
         
-    def plot(self):
-        preds = self.preds
-        obss = self.obss
-        for key in preds.keys():
-            self.plot_each(key, obss[key], preds[key])
-        
-    def plot_each(self, title, obs, pred):
-        plt.figure()
-        plt.title(title)
-        plt.plot( obs, label='obs' )
-        plt.plot(pred, label='pred')
-        plt.axvline(self.n_train, color='red')
-        plt.legend()
-        
-    def plot_raw(self):
-        preds = self.preds
-        obss = self.obss
-        key = 'raw'
+def plot(self):
+    preds = self.preds
+    obss = self.obss
+    for key in preds.keys():
         self.plot_each(key, obss[key], preds[key])
+
+def plot_each(self, title, obs, pred):
+    plt.figure()
+    plt.title(title)
+    plt.plot( obs, label='obs' )
+    plt.plot(pred, label='pred')
+    plt.axvline(self.n_train, color='red')
+    plt.legend()
+
+def plot_raw(self):
+    preds = self.preds
+    obss = self.obss
+    key = 'raw'
+    self.plot_each(key, obss[key], preds[key])
 
 
 # In[ ]:
@@ -353,9 +360,9 @@ if __name__=="__main__":
     name_seq  = 'car'
     name_prc  = 'not_scale'
     
-    vrfr = Verifier(data_root=data_root, root=root,
+    config = setup(data_root=data_root, root=root,
                    name_seq=name_seq, name_prc=name_prc)
-    vrfr.plot_raw()
+    display(config)
 
 
 # In[ ]:
