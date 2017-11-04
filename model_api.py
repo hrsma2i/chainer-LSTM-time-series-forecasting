@@ -14,9 +14,21 @@ pd.set_option("display.max_rows", 10000)
 import matplotlib.pyplot as plt
 get_ipython().run_line_magic('matplotlib', 'inline')
 from chainer import serializers
+try:
+    from jupyterthemes import jtplot
+    jtplot.style(
+        theme='grade3',
+        figsize=(20, 10),
+        fscale=2,
+    )
+except ModuleNotFoundError:
+    pass
 
-from data_process import Processer
+
+from data_process import Processer, name2prc
 from model import RNN
+# change below later
+from others.score import Scorer
 
 
 # In[ ]:
@@ -141,7 +153,6 @@ if __name__=="__main__":
     root      = 'result/test'
     name_seq  = 'car'
     name_prc  = 'default'
-    from others.score import Scorer
     
     # observation
     name_csv_test  = '{}_test.csv'.format(name_seq)
@@ -159,16 +170,16 @@ if __name__=="__main__":
     name_csv_train = '{}_train.csv'.format(name_seq)
     path_csv_train = os.path.join(data_root, name_csv_train)
     
-    prcsr = Processer()
+    prcsr = Processer(**name2prc(name_prc))
     
     path_seq = os.path.join(root, name_seq)
     path_prc = os.path.join(path_seq, name_prc)
     
     name_hp = select_hp(root=path_prc)
-    print(name_hp)
     
     path_hp = os.path.join(path_prc, name_hp)
     epoch = select_epoch(root=path_hp)
+    print(path_hp)
     print('epoch', epoch)
     
     model = get_learned_model(root=path_hp, epoch=epoch)
@@ -188,8 +199,8 @@ if __name__=="__main__":
     # plot fitting
     plt.figure(figsize=(20,10))
     plt.plot(obs_test,  label='obs')
-    plt.plot(pred_test, label='pred')
-    plt.plot(pred_test_baseline, label='baseline')
+    plt.plot(pred_test, label='pred LSTM')
+    plt.plot(pred_test_baseline, label='pred baseline')
     plt.legend()
 
 
@@ -235,74 +246,121 @@ if __name__=="__main__":
 # In[ ]:
 
 # fitting train val
-if __name__=="__main__":
-    
-    prcsr = Processer()
-    
-    root = 'result/test/adam0.1'
-    epoch = 300
-    
-    hp = json.load(open(os.path.join(root, 'hyperparameters.json')))
-    units = hp['units']
-    
-    model = RNN(units)
-    serializers.load_npz(os.path.join(root, 'model_epoch-{}'.format(epoch)), model)
-    
-    series = pd.read_csv('data/airline_train.csv', header=None).values.flatten()
-    if series.ndim == 1:
-        print('ndim = 1')
-        series = series.reshape(-1, 1)
+class Verifier(object):
+    def __init__(self, data_root, root, name_seq, name_prc):
+        self.obss  = {}
+        self.preds = {}
         
-    X_train, X_val, y_train, y_val = prcsr.transform_train(series)
-    
-    X_train = np.concatenate((X_train, X_val), axis=0)
-    obs_train = np.concatenate((y_train, y_val), axis=0)
-    
-    pred_train = []
-    
-    model.reset_state()
-    for Xt in X_train:
-        pred = model(Xt.reshape(-1, 1)).data[0]
-        pred_train.append(pred)
-    pred_train = np.array(pred_train)
-    
-    plt.figure(figsize=(20,10))
-    plt.axvline(y_train.shape[0], color='red')
-    plt.plot( obs_train)
-    plt.plot(pred_train)
-    
-    
-    if prcsr.ysclr is not None:
-        obs_train = prcsr.inverse_scale(obs_train)
-        pred_train = prcsr.inverse_scale(pred_train)
+        name_csv_train = '{}_train.csv'.format(name_seq)
+        path_csv_train = os.path.join(data_root, name_csv_train)
+        series = pd.read_csv(path_csv_train, header=None).values
+
+        # setup Processer and datasets
+        prcsr = Processer(**name2prc(name_prc))
+        X_train, X_val, y_train, y_val = prcsr.transform_train(series)
+        X_train = np.concatenate((X_train, X_val), axis=0)
+        obs_train = np.concatenate((y_train, y_val), axis=0)
         
-        plt.figure(figsize=(20,10))
-        plt.axvline(y_train.shape[0], color='red')
-        plt.plot( obs_train)
-        plt.plot(pred_train)
+        self.n_train = y_train.shape[0]
         
-    if prcsr.diff:
-        before_diff = series[:,:]
+        
+        # setup model
+        path_seq = os.path.join(root, name_seq)
+        path_prc = os.path.join(path_seq, name_prc)
+
+        name_hp = select_hp(root=path_prc)
+
+        path_hp = os.path.join(path_prc, name_hp)
+        epoch = select_epoch(root=path_hp)
+
+        print(path_hp)
+        print('epoch', epoch)
+
+        model = get_learned_model(root=path_hp, epoch=epoch)
+
+
+        # predict
+        pred_train = []
+        model.reset_state()
+        for Xt in X_train:
+            p_t = model(Xt.reshape(-1, 1)).data[0]
+            pred_train.append(p_t)
+        pred_train = np.array(pred_train)
+        
+        self.obss['direct'] = obs_train.copy()
+        self.preds['direct'] = pred_train.copy()
+        
+
+        # inverse transform
+        if prcsr.ysclr is not None:
+            obs_train = prcsr.inverse_scale(obs_train)
+            pred_train = prcsr.inverse_scale(pred_train)
+            
+            self.obss['unscale'] = obs_train.copy()
+            self.preds['unscale'] = pred_train.copy()
+
+
+        if prcsr.diff:
+            before_diff = series.copy()
+            if prcsr.log:
+                before_diff = prcsr.log_transform(before_diff)
+
+            obs_train  = before_diff[2:] 
+
+            obs1_train = before_diff[1:-1]
+            pred_train = prcsr.inverse_diff_given(pred_train, obs1_train)
+            
+            self.obss['undiff'] = obs_train.copy()
+            self.preds['undiff'] = pred_train.copy()
+
+
         if prcsr.log:
-            before_diff = prcsr.log_transform(before_diff)
-        obs_train  = before_diff[2:] 
-        obs1_train = before_diff[1:-1]
-        pred_train = prcsr.inverse_diff_given(pred_train, obs1_train)
+            pred_train = prcsr.inverse_log(pred_train)
+            obs_train = series[-pred_train.shape[0]:]
+            
+            self.obss['unlog'] = obs_train.copy()
+            self.preds['unlog'] = pred_train.copy()
         
-        plt.figure(figsize=(20,10))
-        plt.axvline(y_train.shape[0], color='red')
-        plt.plot( obs_train)
-        plt.plot(pred_train)
-    
-    if prcsr.log:
-        pred_train = prcsr.inverse_log(pred_train)
+        self.obss['raw'] = obs_train.copy()
+        self.preds['raw'] = pred_train.copy()
         
-    obs_train = series[2:]
+    def plot(self):
+        preds = self.preds
+        obss = self.obss
+        for key in preds.keys():
+            self.plot_each(key, obss[key], preds[key])
+        
+    def plot_each(self, title, obs, pred):
+        plt.figure()
+        plt.title(title)
+        plt.plot( obs, label='obs' )
+        plt.plot(pred, label='pred')
+        plt.axvline(self.n_train, color='red')
+        plt.legend()
+        
+    def plot_raw(self):
+        preds = self.preds
+        obss = self.obss
+        key = 'raw'
+        self.plot_each(key, obss[key], preds[key])
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'car'
+    name_prc  = 'not_scale'
     
-    plt.figure(figsize=(20,10))
-    plt.axvline(y_train.shape[0], color='red')
-    plt.plot( obs_train)
-    plt.plot(pred_train)
+    vrfr = Verifier(data_root=data_root, root=root,
+                   name_seq=name_seq, name_prc=name_prc)
+    vrfr.plot_raw()
+
+
+# In[ ]:
+
+
 
 
 # In[ ]:
