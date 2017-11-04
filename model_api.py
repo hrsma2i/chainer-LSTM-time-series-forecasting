@@ -146,105 +146,6 @@ def predict(num_pred, model, prcsr, path_csv_train):
 
 # In[ ]:
 
-# comparison with baseline
-if __name__=="__main__":
-    data_root = 'data'
-    pred_baseline_root = 'data/pred_baseline'
-    root      = 'result/test'
-    name_seq  = 'car'
-    name_prc  = 'default'
-    
-    # observation
-    name_csv_test  = '{}_test.csv'.format(name_seq)
-    path_csv_test  = os.path.join(data_root, name_csv_test)
-    obs_test = pd.read_csv(path_csv_test, 
-                           header=None).values.flatten()
-    
-    # pred baseline
-    name_csv_test  = 'pred_baseline_{}.csv'.format(name_seq)
-    path_csv_test  = os.path.join(pred_baseline_root, name_csv_test)
-    pred_test_baseline = pd.read_csv(path_csv_test, 
-                           header=None).values.flatten()
-    
-    # pred LSTM
-    name_csv_train = '{}_train.csv'.format(name_seq)
-    path_csv_train = os.path.join(data_root, name_csv_train)
-    
-    prcsr = Processer(**name2prc(name_prc))
-    
-    path_seq = os.path.join(root, name_seq)
-    path_prc = os.path.join(path_seq, name_prc)
-    
-    name_hp = select_hp(root=path_prc)
-    
-    path_hp = os.path.join(path_prc, name_hp)
-    epoch = select_epoch(root=path_hp)
-    print(path_hp)
-    print('epoch', epoch)
-    
-    model = get_learned_model(root=path_hp, epoch=epoch)
-    
-    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
-                        path_csv_train=path_csv_train)
-    
-    scrr = Scorer(obs_test, pred_test, do_adjust=True)
-    scrr_baseline = Scorer(obs_test, pred_test_baseline, do_adjust=True)
-    scores = {
-        'LSTM':scrr.get_all(),
-        'baseline':scrr_baseline.get_all()
-    }
-    df_score = pd.DataFrame(scores)
-    display(df_score)
-    
-    # plot fitting
-    plt.figure(figsize=(20,10))
-    plt.plot(obs_test,  label='obs')
-    plt.plot(pred_test, label='pred LSTM')
-    plt.plot(pred_test_baseline, label='pred baseline')
-    plt.legend()
-
-
-# In[ ]:
-
-# fitting test
-if __name__=="__main__":
-    data_root = 'data'
-    root      = 'result/test'
-    name_seq  = 'airline'
-    name_prc  = 'default'
-    
-    name_csv_train = '{}_train.csv'.format(name_seq)
-    path_csv_train = os.path.join(data_root, name_csv_train)
-    name_csv_test  = '{}_test.csv'.format(name_seq)
-    path_csv_test  = os.path.join(data_root, name_csv_test)
-    
-    prcsr = Processer()
-    
-    path_seq = os.path.join(root, name_seq)
-    path_prc = os.path.join(path_seq, name_prc)
-    
-    name_hp = select_hp(root=path_prc)
-    
-    path_hp = os.path.join(path_prc, name_hp)
-    epoch = select_epoch(root=path_hp)
-    
-    model = get_learned_model(root=path_hp, epoch=epoch)
-    
-    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
-                        path_csv_train=path_csv_train)
-    obs_test = pd.read_csv(path_csv_test, 
-                           header=None).values.flatten()
-    
-    print(name_hp)
-    print(epoch)
-    plt.figure(figsize=(20,10))
-    plt.plot(pred_test, label='pred')
-    plt.plot(obs_test,  label='obs')
-    plt.legend()
-
-
-# In[ ]:
-
 def setup(data_root, root, name_seq, name_prc):
     """
     Make variables to initialize Predictor
@@ -363,7 +264,161 @@ def plot_fitting(dict_arrays, title=None):
 
 # In[ ]:
 
+def compare_with_baseline(data_root, pred_baseline_root,
+                          root, name_seq, name_prc):
+    """
+    - Score (quantitively compare)
+    - Plot fitting (qualitatively compare)
+    - data: test
+    
+    # Param
+    
+    """
+    # observation
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    # pred baseline
+    name_csv_baseline  = 'pred_baseline_{}.csv'.format(name_seq)
+    path_csv_baseline  = os.path.join(pred_baseline_root, name_csv_baseline)
+    pred_test_baseline = pd.read_csv(path_csv_baseline, 
+                           header=None).values.flatten()
+    
+    # pred LSTM
+    model, prcsr, path_csv_train = setup(data_root=data_root, 
+                                         root=root,
+                                         name_seq=name_seq,
+                                         name_prc=name_prc)
+    
+    pred_test = predict(num_pred=len(obs_test), 
+                        model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    
+    # score
+    scrr = Scorer(obs_test, pred_test, do_adjust=True)
+    scrr_baseline = Scorer(obs_test, pred_test_baseline, do_adjust=True)
+    scores = {
+        'LSTM':scrr.get_all(),
+        'baseline':scrr_baseline.get_all()
+    }
+    df_score = pd.DataFrame(scores)
+    display(df_score)
+    
+    # plot fitting
+    d_plot = {
+        'obs':obs_test,
+        'pred LSTM':pred_test,
+        'pred baseline':pred_test_baseline,
+    }
+    plot_fitting(d_plot, title=name_seq)
+
+
+# In[ ]:
+
+# comparison with baseline
 if __name__=="__main__":
+    data_root = 'data'
+    pred_baseline_root = 'data/pred_baseline'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'default'
+    
+compare_with_baseline(data_root, pred_baseline_root,
+                          root, name_seq, name_prc)
+
+
+# In[ ]:
+
+# fitting test
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'default'
+    
+    name_csv_train = '{}_train.csv'.format(name_seq)
+    path_csv_train = os.path.join(data_root, name_csv_train)
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    
+    prcsr = Processer()
+    
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    
+    name_hp = select_hp(root=path_prc)
+    
+    path_hp = os.path.join(path_prc, name_hp)
+    epoch = select_epoch(root=path_hp)
+    
+    model = get_learned_model(root=path_hp, epoch=epoch)
+    
+    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    print(name_hp)
+    print(epoch)
+    plt.figure(figsize=(20,10))
+    plt.plot(pred_test, label='pred')
+    plt.plot(obs_test,  label='obs')
+    plt.legend()
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'not_log'
+    
+    model, prcsr, path_csv_train = setup(data_root=data_root, 
+                                         root=root,
+                                         name_seq=name_seq,
+                                         name_prc=name_prc)
+    # pred/obs train/val
+    prdctr = Predictor(model=model, prcser=prcsr,
+                       path_csv_train=path_csv_train)
+    
+    # obs test
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    # pred test
+    pred_test = predict(num_pred=len(obs_test), 
+                        model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    
+    for k in prdctr.preds.keys():
+        d_plot = {
+            'obs':prdctr.get_obs_train(k),
+            'pred':prdctr.get_pred_train(k),
+        }
+        plot_fitting(d_plot, title='train_'+k)
+        
+        d_plot = {
+            'obs':prdctr.get_obs_val(k),
+            'pred':prdctr.get_pred_val(k),
+        }
+        plot_fitting(d_plot, title='val_'+k)
+        
+    d_plot = {
+        'obs':pred_test,
+        'pred':obs_test,
+    }
+    plot_fitting(d_plot, title='test_'+k)
+
+
+# In[ ]:
+
+# comparison with baseline
+if __name__=="__main__":
+    pred_baseline_root = 'data/pred_baseline'
     data_root = 'data'
     root      = 'result/test'
     name_seq  = 'airline'
