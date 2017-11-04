@@ -330,26 +330,23 @@ class Predictor(object):
         
         self.obss['raw'] = obs_train.copy()
         self.preds['raw'] = pred_train.copy()
-        
-def plot(self):
-    preds = self.preds
-    obss = self.obss
-    for key in preds.keys():
-        self.plot_each(key, obss[key], preds[key])
 
-def plot_each(self, title, obs, pred):
+
+# In[ ]:
+
+def plot_fitting(dict_arrays, title=None):
+    """
+    # Param
+    - dict_arrays (dict):
+        - key (str): used as the label when plotting
+        - value (ndarray)
+    """
     plt.figure()
-    plt.title(title)
-    plt.plot( obs, label='obs' )
-    plt.plot(pred, label='pred')
-    plt.axvline(self.n_train, color='red')
+    if title is not None:
+        plt.title(title)
+    for k, v in dict_arrays.items():
+        plt.plot(v, label=k)
     plt.legend()
-
-def plot_raw(self):
-    preds = self.preds
-    obss = self.obss
-    key = 'raw'
-    self.plot_each(key, obss[key], preds[key])
 
 
 # In[ ]:
@@ -367,7 +364,10 @@ if __name__=="__main__":
 
 # In[ ]:
 
-
+d = {
+    'a':np.arange(10).reshape(-1,1),
+    'b':np.arange(0,20,2).reshape(-1,1),
+}
 
 
 # In[ ]:
