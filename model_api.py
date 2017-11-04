@@ -109,7 +109,7 @@ def select_hp(root, verbose=False):
 
 def predict(num_pred, model, prcsr, path_csv_train):
     
-    series = pd.read_csv(path_csv_train, header=None).values
+    series = pd.read_csv(path_csv_train, header=None).values.astype(np.float)
     X_train, X_val, _, _ = prcsr.transform_train(series)
     X_train = np.concatenate((X_train, X_val), axis=0)
     
@@ -317,13 +317,13 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
-# comparison with baseline
+# test compare
 if __name__=="__main__":
     data_root = 'data'
     pred_baseline_root = 'data/pred_baseline'
     root      = 'result/test'
     name_seq  = 'airline'
-    name_prc  = 'default'
+    name_prc  = 'standard'
     
 compare_with_baseline(data_root, pred_baseline_root,
                           root, name_seq, name_prc)
