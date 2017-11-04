@@ -109,7 +109,7 @@ def select_hp(root, verbose=False):
 
 def predict(num_pred, model, prcsr, path_csv_train):
     
-    series = pd.read_csv(path_csv_train, header=None).values
+    series = pd.read_csv(path_csv_train, header=None).values.astype(np.float)
     X_train, X_val, _, _ = prcsr.transform_train(series)
     X_train = np.concatenate((X_train, X_val), axis=0)
     
@@ -317,55 +317,17 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
-# comparison with baseline
+# test compare
 if __name__=="__main__":
-    data_root = 'data'
-    pred_baseline_root = 'data/pred_baseline'
-    root      = 'result/test'
     name_seq  = 'airline'
+    
+    pred_baseline_root = 'data/pred_baseline'
+    data_root = 'data'
+    root      = 'result/test'
     name_prc  = 'default'
     
 compare_with_baseline(data_root, pred_baseline_root,
                           root, name_seq, name_prc)
-
-
-# In[ ]:
-
-# fitting test
-if __name__=="__main__":
-    data_root = 'data'
-    root      = 'result/test'
-    name_seq  = 'airline'
-    name_prc  = 'default'
-    
-    name_csv_train = '{}_train.csv'.format(name_seq)
-    path_csv_train = os.path.join(data_root, name_csv_train)
-    name_csv_test  = '{}_test.csv'.format(name_seq)
-    path_csv_test  = os.path.join(data_root, name_csv_test)
-    
-    prcsr = Processer()
-    
-    path_seq = os.path.join(root, name_seq)
-    path_prc = os.path.join(path_seq, name_prc)
-    
-    name_hp = select_hp(root=path_prc)
-    
-    path_hp = os.path.join(path_prc, name_hp)
-    epoch = select_epoch(root=path_hp)
-    
-    model = get_learned_model(root=path_hp, epoch=epoch)
-    
-    pred_test = predict(num_pred=12, model=model, prcsr=prcsr,
-                        path_csv_train=path_csv_train)
-    obs_test = pd.read_csv(path_csv_test, 
-                           header=None).values.flatten()
-    
-    print(name_hp)
-    print(epoch)
-    plt.figure(figsize=(20,10))
-    plt.plot(pred_test, label='pred')
-    plt.plot(obs_test,  label='obs')
-    plt.legend()
 
 
 # In[ ]:
