@@ -280,30 +280,30 @@ class Predictor(object):
         series = pd.read_csv(path_csv_train, header=None).values
         X_train, X_val, y_train, y_val = prcsr.transform_train(series)
         
-        X_train = np.concatenate((X_train, X_val), axis=0)
-        obs_train = np.concatenate((y_train, y_val), axis=0)
+        X_trvl = np.concatenate((X_train, X_val), axis=0)
+        obs_trvl = np.concatenate((y_train, y_val), axis=0)
         
-        self.n_train = y_train.shape[0]
+        self.n_val = y_val.shape[0]
 
         # predict
-        pred_train = []
+        pred_trvl = []
         model.reset_state()
-        for Xt in X_train:
+        for Xt in X_trvl:
             p_t = model(Xt.reshape(-1, 1)).data[0]
-            pred_train.append(p_t)
-        pred_train = np.array(pred_train)
+            pred_trvl.append(p_t)
+        pred_trvl = np.array(pred_trvl)
         
-        self.obss['direct'] = obs_train.copy()
-        self.preds['direct'] = pred_train.copy()
+        self.obss['direct'] = obs_trvl.copy()
+        self.preds['direct'] = pred_trvl.copy()
         
 
         # inverse transform
         if prcsr.ysclr is not None:
-            obs_train = prcsr.inverse_scale(obs_train)
-            pred_train = prcsr.inverse_scale(pred_train)
+            obs_trvl = prcsr.inverse_scale(obs_trvl)
+            pred_trvl = prcsr.inverse_scale(pred_trvl)
             
-            self.obss['unscale'] = obs_train.copy()
-            self.preds['unscale'] = pred_train.copy()
+            self.obss['unscale'] = obs_trvl.copy()
+            self.preds['unscale'] = pred_trvl.copy()
 
 
         if prcsr.diff:
@@ -311,25 +311,37 @@ class Predictor(object):
             if prcsr.log:
                 before_diff = prcsr.log_transform(before_diff)
 
-            obs_train  = before_diff[2:] 
+            obs_trvl  = before_diff[2:] 
 
-            obs1_train = before_diff[1:-1]
+            obs1_trvl = before_diff[1:-1]
             # TODO just pred + obs1 and delete inverse_diff_given
-            pred_train = prcsr.inverse_diff_given(pred_train, obs1_train)
+            pred_trvl = prcsr.inverse_diff_given(pred_trvl, obs1_trvl)
             
-            self.obss['undiff'] = obs_train.copy()
-            self.preds['undiff'] = pred_train.copy()
+            self.obss['undiff'] = obs_trvl.copy()
+            self.preds['undiff'] = pred_trvl.copy()
 
 
         if prcsr.log:
-            pred_train = prcsr.inverse_log(pred_train)
-            obs_train = series[-pred_train.shape[0]:]
+            pred_trvl = prcsr.inverse_log(pred_trvl)
+            obs_trvl = series[-pred_trvl.shape[0]:]
             
-            self.obss['unlog'] = obs_train.copy()
-            self.preds['unlog'] = pred_train.copy()
+            self.obss['unlog'] = obs_trvl.copy()
+            self.preds['unlog'] = pred_trvl.copy()
         
-        self.obss['raw'] = obs_train.copy()
-        self.preds['raw'] = pred_train.copy()
+        self.obss['raw'] = obs_trvl.copy()
+        self.preds['raw'] = pred_trvl.copy()
+        
+    def get_pred_train(self, key):
+        return self.preds[key][:-self.n_val]
+    
+    def get_pred_val(self, key):
+        return self.preds[key][-self.n_val:]
+    
+    def get_obs_train(self, key):
+        return self.obss[key][:-self.n_val]
+    
+    def get_obs_val(self, key):
+        return self.obss[key][-self.n_val:]
 
 
 # In[ ]:
@@ -354,12 +366,24 @@ def plot_fitting(dict_arrays, title=None):
 if __name__=="__main__":
     data_root = 'data'
     root      = 'result/test'
-    name_seq  = 'car'
-    name_prc  = 'not_scale'
+    name_seq  = 'airline'
+    name_prc  = 'not_log'
     
     config = setup(data_root=data_root, root=root,
                    name_seq=name_seq, name_prc=name_prc)
-    display(config)
+    prdctr = Predictor(*config)
+    for k in prdctr.preds.keys():
+        d_plot = {
+            'obs':prdctr.get_obs_train(k),
+            'pred':prdctr.get_pred_train(k),
+        }
+        plot_fitting(d_plot, title='train_'+k)
+        
+        d_plot = {
+            'obs':prdctr.get_obs_val(k),
+            'pred':prdctr.get_pred_val(k),
+        }
+        plot_fitting(d_plot, title='val_'+k)
 
 
 # In[ ]:
