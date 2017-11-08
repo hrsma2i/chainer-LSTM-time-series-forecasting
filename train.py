@@ -172,6 +172,48 @@ def hp2json(hp):
 
 # In[ ]:
 
+class HyperParameters():
+    table = {}
+    
+    max_n_layer = 5
+    max_n_unit  = 10
+    opts = [
+        optimizers.SGD(),
+        optimizers.Adam(),
+        optimizers.RMSprop(),
+        optimizers.AdaDelta(),
+        optimizers.NesterovAG(),
+        optimizers.MomentumSGD(),
+    ]
+    dict_opts = { opt.__class__.__name__:opt 
+                for opt in opts }
+    
+    def name2hp(self, name_hp):
+        hps = name_hp.split('_')
+        prefixes = ['u', 'opt']
+        hp = [ 
+            for hp, p in zip(hps, prefixes)]
+    
+    def hp2json(self, hp):
+        hp_json = {
+            'units':hp['units'],
+            'optimizer':hp['optimizer'].__class__.__name__
+        }
+        return hp_json
+
+    def hp2name(self, hp):
+        d = {
+            'u':hp['units'],
+            'opt':hp['optimizer'].__class__.__name__
+        }
+        name = '_'.join([k+str(v) for k, v in d.items()])
+        return name
+    
+HyperParameters().get_dict_opts()
+
+
+# In[ ]:
+
 def train(datasets, hp, out, n_epoch):
     """
     dump the given hyperparameters hp, and
@@ -318,6 +360,36 @@ if __name__=="__main__":
     if series.ndim == 1:
         print('ndim = 1')
         series = series.reshape(-1, 1)
+
+    hp = {
+        'units':(3, 7, 3),
+        'optimizer':optimizers.Adam(alpha=lr)
+    }    
+    print(hp['optimizer'].alpha)
+    
+
+    root = 'result/test/adam{}'.format(lr)
+
+    datasets = prcsr.get_datasets(series)
+    
+    # training
+    #train(datasets, hp, out=root, n_epoch=300)
+
+
+# In[ ]:
+
+# train a model with train+val for comparison
+if __name__=="__main__":
+    data_root = 'data'
+    root = 'result/test_full'
+    name_seq = 'airline'
+    name_prc = 'default'
+    name_hp = ''
+    
+    path_csv = os.path.join(data_root, '{}_train.csv'.format(name_seq))
+    series = pd.read_csv(path_csv, header=None).values
+        
+    prcsr = Processer(**name2prc(name_prc))
 
     hp = {
         'units':(3, 7, 3),
