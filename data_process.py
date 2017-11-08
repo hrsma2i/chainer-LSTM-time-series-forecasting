@@ -253,8 +253,8 @@ def name2prc(name_prc):
     table['minmax+'] = tmp_prc
     
     tmp_prc = deepcopy(table['default'])
-    tmp_prc['sclr'] = StandardScaler((0,1))
-    tmp_prc['ysclr'] = StandardScaler((0,1))
+    tmp_prc['sclr'] = StandardScaler()
+    tmp_prc['ysclr'] = StandardScaler()
     table['standard'] = tmp_prc
     
     tmp_prc = deepcopy(table['default'])
@@ -265,6 +265,12 @@ def name2prc(name_prc):
     tmp_prc = deepcopy(table['default'])
     tmp_prc['ysclr'] = None
     table['not_label_scale'] = tmp_prc
+    
+    tmp_prc = deepcopy(table['default'])
+    tmp_prc['log'] = False
+    tmp_prc['sclr'] = StandardScaler()
+    tmp_prc['ysclr'] = StandardScaler()
+    table['not_log_standard'] = tmp_prc
     
     return table[name_prc]
 
