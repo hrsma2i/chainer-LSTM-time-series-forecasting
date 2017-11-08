@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from data_process import Processer
+from data_process import Processer, name2prc
 from train import tune
 
 
@@ -22,7 +22,7 @@ def tune_prc(root, series, n_sample=100, n_epoch=300):
     - root   (str): the path where results will be saved
     - series (ndarray: (T, F)):
     """
-    def routin(name_prc, prscr):
+    def routine(name_prc):
         """
         global
         - root
@@ -31,6 +31,7 @@ def tune_prc(root, series, n_sample=100, n_epoch=300):
         - n_epoch
         """
         print(name_prc)
+        prcsr = Processer(name2prc(name_prc))
         path_prc = os.path.join(root, name_prc)
         if not os.path.exists(path_prc):
             os.mkdir(path_prc)
@@ -38,26 +39,17 @@ def tune_prc(root, series, n_sample=100, n_epoch=300):
         tune(root=path_prc, datasets=datasets,
             n_sample=n_sample, n_epoch=n_epoch)
         
-    name_prc = 'not_log'
-    prcsr = Processer(log=False)
-    routin(name_prc, prcsr)
-        
-    name_prc = 'not_diff'
-    prcsr = Processer(diff=False)
-    routin(name_prc, prcsr)
+    prcs = [
+        'not_log',
+        'not_diff',
+        'minmax+',
+        'standard',
+        'not_scale',
+        'not_label_scale',
+    ]
     
-    sclrs ={
-        'minmax+':MinMaxScaler((0,1)),
-        'standard':StandardScaler(),
-        'not_scale':None,
-    }
-    for name_prc, sclr in sclrs.items():
-        prcsr = Processer(sclr=sclr, ysclr=sclr)
-        routin(name_prc, prcsr)
-        
-    name_prc = 'not_label_scale'
-    prcsr = Processer(ysclr=None)
-    routin(name_prc, prcsr)
+    for name_prc in prcs:
+        routine(name_prc)
 
 
 # In[ ]:
@@ -98,7 +90,7 @@ if __name__=="__main__":
     n_epoch  = 300
     data_root = 'data'
     path_sequences = os.path.join(data_root, 'sequences_verify')
-    root = 'result'
+    root = 'result/test_tune_prc'
     if not os.path.exists(root):
         os.mkdir(root)
     tune_seq(data_root=data_root,
