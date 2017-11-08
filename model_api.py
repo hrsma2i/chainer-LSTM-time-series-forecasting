@@ -319,6 +319,15 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
+def same_len(*arrs):
+    lengths = [arr.shape[0] for arr in arrs]
+    lmin = min(lengths)
+    cuts = tuple(arr[-lmin:] for arr in arrs)
+    return cuts
+
+
+# In[ ]:
+
 def verify_prc(data_root, root, name_seq, name_prc, verbose=False):
     # obs test (must be written earier than setup_and_predict)
     name_csv_test  = '{}_test.csv'.format(name_seq)
@@ -388,22 +397,31 @@ def verify_prc(data_root, root, name_seq, name_prc, verbose=False):
     
     k = 'raw'
     # train
-    obs_train = prdctr_def.get_obs_train(k)
     pred_train = prdctr.get_pred_train(k)
+    obs_train = prdctr_def.get_obs_train(k)
     pred_train_def = prdctr_def.get_pred_train(k)
+    pred_train, obs_train, pred_train_def = same_len(pred_train,
+                                                     obs_train,
+                                                     pred_train_def)
     score_and_plot('train', obs=obs_train,
                    pred=pred_train,
                    pred_def=pred_train_def, key=k)
 
     # val
-    obs_val = prdctr_def.get_obs_val(k)
     pred_val = prdctr.get_pred_val(k)
+    obs_val = prdctr_def.get_obs_val(k)
     pred_val_def = prdctr_def.get_pred_val(k)
+    pred_val, obs_val, pred_val_def = same_len(pred_val,
+                                                     obs_val,
+                                                     pred_val_def)
     score_and_plot('val', obs=obs_val,
                    pred=pred_val,
                    pred_def=pred_val_def, key=k)
         
     # test
+    pred_test, obs_test, pred_test_def = same_len(pred_test,
+                                                     obs_test,
+                                                     pred_test_def)
     score_and_plot('test', obs=obs_test,
                    pred=pred_test,
                    pred_def=pred_test_def, key=k)
@@ -415,32 +433,60 @@ def verify_prc(data_root, root, name_seq, name_prc, verbose=False):
 
 # In[ ]:
 
-# test compare
-if __name__=="__main__":
-    name_seq  = 'airline'
-    
+def main_compare():
     pred_baseline_root = 'data/pred_baseline'
     data_root = 'data'
+    name_sequences = 'sequences'
     root      = 'result/test'
     name_prc  = 'default'
     
-compare_with_baseline(data_root, pred_baseline_root,
-                          root, name_seq, name_prc)
+    path_sequences = os.path.join(data_root, name_sequences)
+    seqs = [ seq.rstrip()
+        for seq in open(path_sequences, 'r').readlines()]
+    
+    for name_seq in seqs:
+        compare_with_baseline(data_root=data_root,
+                              pred_baseline_root=pred_baseline_root,
+                              root=root, name_seq=name_seq,
+                              name_prc=name_prc)
 
 
 # In[ ]:
 
-# test verify_prc
-if __name__=="__main__":
-    name_seq  = 'airline'
-    name_prc  = 'not_log'
-    verbose = True
-    
+def main_verification(name_prc, verbose):
     data_root = 'data'
     root      = 'result/test'
+    name_sequences = 'sequences_verify'
     
-verify_prc(data_root=data_root, root=root, name_seq=name_seq,
-           name_prc=name_prc, verbose=verbose)
+    path_sequences = os.path.join(data_root, name_sequences)
+    seqs = [ seq.rstrip()
+        for seq in open(path_sequences, 'r').readlines()]
+    
+    for name_seq in seqs:
+        verify_prc(data_root=data_root, root=root,
+                   name_seq=name_seq, name_prc=name_prc,
+                   verbose=verbose)
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    prcs = [
+        'not_log',
+        'not_diff',
+        'minmax+',
+        'standard',
+        'not_scale',
+        'not_label_scale',
+    ]
+    for name_prc in prcs:
+        main_verification(name_prc=name_prc, verbose=True)
+
+
+# In[ ]:
+
+if __name__=="__main__":
+    main_compare()
 
 
 # In[ ]:
