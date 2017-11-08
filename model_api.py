@@ -486,7 +486,14 @@ if __name__=="__main__":
 # In[ ]:
 
 if __name__=="__main__":
-    main_compare()
+    data_root = 'data'
+    root      = 'result/test'
+    name_prc  = 'not_diff'
+    name_seq  = 'toy'
+    
+    verify_prc(data_root=data_root, root=root,
+               name_seq=name_seq, name_prc=name_prc,
+               verbose=True)
 
 
 # In[ ]:
