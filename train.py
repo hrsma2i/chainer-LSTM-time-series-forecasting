@@ -24,7 +24,7 @@ from chainer.iterators import SerialIterator
 from sklearn.model_selection import ParameterGrid, ParameterSampler
 
 from model import RNN
-from data_process import Processer
+from data_process import Processer, name2prc
 
 
 # In[ ]:
@@ -297,7 +297,7 @@ if __name__=="__main__":
     path_csv = os.path.join(data_root, '{}_train.csv'.format(name_seq))
     series = pd.read_csv(path_csv, header=None).values
     
-    prcsr = Processer()
+    prcsr = Processer(name2prc(name_prc))
     
     datasets = prcsr.get_datasets(series)
     
