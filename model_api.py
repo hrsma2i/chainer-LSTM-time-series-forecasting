@@ -314,7 +314,7 @@ def plot_fitting(dict_arrays, title=None):
 
 # In[ ]:
 
-def compare_with_baseline(data_root, pred_baseline_root,
+def compare_full(data_root, pred_baseline_root,
                           root, name_seq, name_prc, 
                           lstm_epoch=None):
     """
@@ -370,7 +370,62 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # In[ ]:
 
-# test compare
+def compare_with_baseline(data_root, pred_baseline_root,
+                          root, name_seq, name_prc, 
+                          lstm_epoch=None):
+    """
+    - Score (quantitively compare)
+    - Plot fitting (qualitatively compare)
+    - data: test
+    
+    # Param
+    
+    """
+    # observation
+    name_csv_test  = '{}_test.csv'.format(name_seq)
+    path_csv_test  = os.path.join(data_root, name_csv_test)
+    obs_test = pd.read_csv(path_csv_test, 
+                           header=None).values.flatten()
+    
+    # pred baseline
+    name_csv_baseline  = 'pred_baseline_{}.csv'.format(name_seq)
+    path_csv_baseline  = os.path.join(pred_baseline_root, name_csv_baseline)
+    pred_test_baseline = pd.read_csv(path_csv_baseline, 
+                           header=None).values.flatten()
+    
+    # pred LSTM
+    model, prcsr, path_csv_train = setup(data_root=data_root, 
+                                         root=root,
+                                         name_seq=name_seq,
+                                         name_prc=name_prc,
+                                        )
+    
+    pred_test = predict(num_pred=len(obs_test), 
+                        model=model, prcsr=prcsr,
+                        path_csv_train=path_csv_train)
+    
+    # score
+    scrr = Scorer(obs_test, pred_test, do_adjust=True)
+    scrr_baseline = Scorer(obs_test, pred_test_baseline, do_adjust=True)
+    scores = {
+        'LSTM':scrr.get_all(),
+        'baseline':scrr_baseline.get_all()
+    }
+    df_score = pd.DataFrame(scores)
+    display(df_score)
+    
+    # plot fitting
+    d_plot = {
+        'obs':obs_test,
+        'pred LSTM':pred_test,
+        'pred baseline':pred_test_baseline,
+    }
+    plot_fitting(d_plot, title=name_seq)
+
+
+# In[ ]:
+
+# test compare_full
 if __name__=="__main__":
     for epoch in range(1,150+1, 15):
         data_root = 'data'
@@ -378,13 +433,30 @@ if __name__=="__main__":
         name_seq  = 'winnebago'
         name_prc  = 'default'
         pred_baseline_root = 'data/pred_baseline'
-        compare_with_baseline(data_root=data_root,
+        compare_full(data_root=data_root,
                               pred_baseline_root=pred_baseline_root,
                               root=root,
                               name_seq=name_seq,
                               name_prc=name_prc,
                               lstm_epoch=epoch
                              )
+
+
+# In[ ]:
+
+# test compare_full
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'winnebago'
+    name_prc  = 'default'
+    pred_baseline_root = 'data/pred_baseline'
+    compare_with_baseline(data_root=data_root,
+                          pred_baseline_root=pred_baseline_root,
+                          root=root,
+                          name_seq=name_seq,
+                          name_prc=name_prc,
+                         )
 
 
 # In[ ]:
