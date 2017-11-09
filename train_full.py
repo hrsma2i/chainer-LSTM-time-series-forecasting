@@ -79,6 +79,7 @@ if __name__=="__main__":
     root = 'result/test'
     name_prc = 'default'
     name_sequences = 'sequences'
+    n_epoch = 500
     
     path_sequences = os.path.join(data_root, name_sequences)
     seqs = [ seq.rstrip()
@@ -88,7 +89,8 @@ if __name__=="__main__":
         train_full(data_root=data_root,
                    root=root,
                    name_seq=name_seq,
-                   name_prc=name_prc)
+                   name_prc=name_prc,
+                   n_epoch)
 
 
 # In[ ]:
