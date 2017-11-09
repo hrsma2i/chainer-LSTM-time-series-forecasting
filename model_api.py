@@ -146,7 +146,7 @@ def predict(num_pred, model, prcsr, path_csv_train):
 
 # In[ ]:
 
-def setup(data_root, root, name_seq, name_prc):
+def setup(data_root, root, name_seq, name_prc, name_hp=None):
     """
     Make variables to initialize Predictor
     """
@@ -161,7 +161,8 @@ def setup(data_root, root, name_seq, name_prc):
     # setup model
     path_seq = os.path.join(root, name_seq)
     path_prc = os.path.join(path_seq, name_prc)
-    name_hp = select_hp(root=path_prc)
+    if name_hp is None:
+        name_hp = select_hp(root=path_prc)
     path_hp = os.path.join(path_prc, name_hp)
     epoch = select_epoch(root=path_hp)
     print(path_hp)
@@ -315,6 +316,21 @@ def compare_with_baseline(data_root, pred_baseline_root,
         'pred baseline':pred_test_baseline,
     }
     plot_fitting(d_plot, title=name_seq)
+
+
+# In[ ]:
+
+# test compare
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_seq  = 'airline'
+    name_prc  = 'not_diff'
+    compare_with_baseline(data_root=data_root,
+                          pred_baseline_root=pred_baseline_root,
+                          root=root,
+                          name_seq=name_seq,
+                          name_prc=name_prc)
 
 
 # In[ ]:
@@ -494,9 +510,4 @@ if __name__=="__main__":
     verify_prc(data_root=data_root, root=root,
                name_seq=name_seq, name_prc=name_prc,
                verbose=True)
-
-
-# In[ ]:
-
-
 
