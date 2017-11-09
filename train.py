@@ -172,44 +172,41 @@ def hp2json(hp):
 
 # In[ ]:
 
-class HyperParameters():
-    table = {}
-    
-    max_n_layer = 5
-    max_n_unit  = 10
-    opts = [
-        optimizers.SGD(),
-        optimizers.Adam(),
-        optimizers.RMSprop(),
-        optimizers.AdaDelta(),
-        optimizers.NesterovAG(),
-        optimizers.MomentumSGD(),
-    ]
-    dict_opts = { opt.__class__.__name__:opt 
-                for opt in opts }
-    
-    def name2hp(self, name_hp):
-        hps = name_hp.split('_')
-        prefixes = ['u', 'opt']
-        hp = [ 
-            for hp, p in zip(hps, prefixes)]
-    
-    def hp2json(self, hp):
-        hp_json = {
-            'units':hp['units'],
-            'optimizer':hp['optimizer'].__class__.__name__
-        }
-        return hp_json
+def path_hp2json(path_hp):
+    path_json = os.path.join(path_hp, 'hyperparameters.json')
+    hp_json = json.load(open(path_json))
+    return hp_json
 
-    def hp2name(self, hp):
-        d = {
-            'u':hp['units'],
-            'opt':hp['optimizer'].__class__.__name__
-        }
-        name = '_'.join([k+str(v) for k, v in d.items()])
-        return name
-    
-HyperParameters().get_dict_opts()
+def json2hp(hp_json):
+    hp = {}
+    for k, v in hp_json.items():
+        if k == 'optimizer':
+            v = eval('optimizers.{}()'.format(v))
+        hp[k] = v
+    return hp
+
+def path_hp2hp(path_hp):
+    hp_json = path_hp2json(path_hp)
+    hp = json2hp(hp_json)
+    return hp
+
+
+# In[ ]:
+
+# test path_hp2hp
+if __name__=="__main__":
+    data_root = 'data'
+    root = 'result/test'
+    name_seq = 'airline'
+    name_prc = 'default'
+
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    name_hp = 'u(1, 6, 6, 6)_optAdam'
+    path_hp = os.path.join(path_prc, name_hp)
+
+
+    print(path_hp2hp(path_hp))
 
 
 # In[ ]:
