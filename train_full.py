@@ -57,7 +57,24 @@ def train_full(data_root='data',
 
 # In[ ]:
 
-# train a model with train+val for comparison
+# test train_full
+if __name__=="__main__":
+    data_root = 'data'
+    root = 'result/test'
+    name_prc = 'default'
+    name_sequences = 'sequences'
+    
+    name_seq = 'toy'
+    
+    train_full(data_root=data_root,
+               root=root,
+               name_seq=name_seq,
+               name_prc=name_prc)
+
+
+# In[ ]:
+
+# loop train_full over seqs
 if __name__=="__main__":
     data_root = 'data'
     root = 'result/test'
