@@ -62,7 +62,6 @@ if __name__=="__main__":
     data_root = 'data'
     root = 'result/test'
     name_prc = 'default'
-    name_sequences = 'sequences'
     
     name_seq = 'toy'
     
