@@ -17,13 +17,11 @@ from model_api import select_hp
 
 # In[ ]:
 
-# train a model with train+val for comparison
-if __name__=="__main__":
-    data_root = 'data'
-    root = 'result/test'
-    name_seq = 'airline'
-    name_prc = 'default'
-    
+def train_full(data_root='data',
+               root='result/test',
+               name_seq='airline',
+               name_prc='default',
+               n_epoch=150):
     path_seq = os.path.join(root, name_seq)
     path_prc = os.path.join(path_seq, name_prc)
     name_hp = select_hp(root=path_prc, verbose=True)
@@ -54,7 +52,27 @@ if __name__=="__main__":
     print(out)
     
     # training
-    train(datasets, hp, out=out, n_epoch=300)
+    train(datasets, hp, out=out, n_epoch=n_epoch)
+
+
+# In[ ]:
+
+# train a model with train+val for comparison
+if __name__=="__main__":
+    data_root = 'data'
+    root = 'result/test'
+    name_prc = 'default'
+    name_sequences = 'sequences'
+    
+    path_sequences = os.path.join(data_root, name_sequences)
+    seqs = [ seq.rstrip()
+            for seq in open(path_sequences, 'r').readlines()] 
+    
+    for name_seq in seqs:
+        train_full(data_root=data_root,
+                   root=root,
+                   name_seq=name_seq,
+                   name_prc=name_prc)
 
 
 # In[ ]:
