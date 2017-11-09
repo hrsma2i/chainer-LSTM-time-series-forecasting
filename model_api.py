@@ -22,7 +22,7 @@ try:
         fscale=2,
     )
 except ModuleNotFoundError:
-    pass
+    print('no module "jupyterthemes"')
 
 
 from data_process import Processer, name2prc
@@ -60,6 +60,26 @@ def select_epoch(root):
     df_log = pd.read_json(path_log)
     
     best_idx = df_log['validation/main/loss'].argmin()
+    epoch = int(df_log['epoch'].ix[best_idx])
+    return epoch
+
+
+# In[ ]:
+
+def last_epoch(root):
+    """
+    Select epoch in which the model have best val loss
+    
+    # Param
+    - root (str): path where the model's weights each epoch are
+    
+    # Return
+    - epoch (int): best epoch
+    """
+    path_log = os.path.join(root, 'log')
+    df_log = pd.read_json(path_log)
+    
+    best_idx = df_log['epoch'].argmax()
     epoch = int(df_log['epoch'].ix[best_idx])
     return epoch
 
@@ -146,7 +166,7 @@ def predict(num_pred, model, prcsr, path_csv_train):
 
 # In[ ]:
 
-def setup(data_root, root, name_seq, name_prc, name_hp=None):
+def setup(data_root, root, name_seq, name_prc):
     """
     Make variables to initialize Predictor
     """
@@ -161,10 +181,37 @@ def setup(data_root, root, name_seq, name_prc, name_hp=None):
     # setup model
     path_seq = os.path.join(root, name_seq)
     path_prc = os.path.join(path_seq, name_prc)
-    if name_hp is None:
-        name_hp = select_hp(root=path_prc)
+    name_hp = select_hp(root=path_prc)
     path_hp = os.path.join(path_prc, name_hp)
     epoch = select_epoch(root=path_hp)
+    print(path_hp)
+    print('epoch', epoch)
+    model = get_learned_model(root=path_hp, epoch=epoch)
+    
+    return model, prcsr, path_csv_train
+
+
+# In[ ]:
+
+def setup_full(data_root, root, name_seq, name_prc, epoch=None):
+    """
+    Make variables to initialize Predictor
+    """
+    
+    # setup path_csv_train
+    name_csv_train = '{}_train.csv'.format(name_seq)
+    path_csv_train = os.path.join(data_root, name_csv_train)
+
+    # setup processer 
+    prcsr = Processer(**name2prc(name_prc))
+
+    # setup model
+    path_seq = os.path.join(root, name_seq)
+    path_prc = os.path.join(path_seq, name_prc)
+    name_hp = 'full_'+select_hp(root=path_prc)
+    path_hp = os.path.join(path_prc, name_hp)
+    if epoch is None:
+        epoch = last_epoch(root=path_hp)
     print(path_hp)
     print('epoch', epoch)
     model = get_learned_model(root=path_hp, epoch=epoch)
@@ -268,7 +315,8 @@ def plot_fitting(dict_arrays, title=None):
 # In[ ]:
 
 def compare_with_baseline(data_root, pred_baseline_root,
-                          root, name_seq, name_prc):
+                          root, name_seq, name_prc, 
+                          lstm_epoch=None):
     """
     - Score (quantitively compare)
     - Plot fitting (qualitatively compare)
@@ -290,10 +338,12 @@ def compare_with_baseline(data_root, pred_baseline_root,
                            header=None).values.flatten()
     
     # pred LSTM
-    model, prcsr, path_csv_train = setup(data_root=data_root, 
+    model, prcsr, path_csv_train = setup_full(data_root=data_root, 
                                          root=root,
                                          name_seq=name_seq,
-                                         name_prc=name_prc)
+                                         name_prc=name_prc,
+                                         epoch=lstm_epoch
+                                        )
     
     pred_test = predict(num_pred=len(obs_test), 
                         model=model, prcsr=prcsr,
@@ -322,15 +372,19 @@ def compare_with_baseline(data_root, pred_baseline_root,
 
 # test compare
 if __name__=="__main__":
-    data_root = 'data'
-    root      = 'result/test'
-    name_seq  = 'airline'
-    name_prc  = 'not_diff'
-    compare_with_baseline(data_root=data_root,
-                          pred_baseline_root=pred_baseline_root,
-                          root=root,
-                          name_seq=name_seq,
-                          name_prc=name_prc)
+    for epoch in range(1,150+1, 15):
+        data_root = 'data'
+        root      = 'result/test'
+        name_seq  = 'winnebago'
+        name_prc  = 'default'
+        pred_baseline_root = 'data/pred_baseline'
+        compare_with_baseline(data_root=data_root,
+                              pred_baseline_root=pred_baseline_root,
+                              root=root,
+                              name_seq=name_seq,
+                              name_prc=name_prc,
+                              lstm_epoch=epoch
+                             )
 
 
 # In[ ]:
@@ -449,6 +503,20 @@ def verify_prc(data_root, root, name_seq, name_prc, verbose=False):
 
 # In[ ]:
 
+# test verify_prc
+if __name__=="__main__":
+    data_root = 'data'
+    root      = 'result/test'
+    name_prc  = 'not_diff'
+    name_seq  = 'toy'
+    
+    verify_prc(data_root=data_root, root=root,
+               name_seq=name_seq, name_prc=name_prc,
+               verbose=True)
+
+
+# In[ ]:
+
 def main_compare():
     pred_baseline_root = 'data/pred_baseline'
     data_root = 'data'
@@ -486,6 +554,7 @@ def main_verification(name_prc, verbose):
 
 # In[ ]:
 
+# test main_verification
 if __name__=="__main__":
     prcs = [
         'not_log',
@@ -502,12 +571,10 @@ if __name__=="__main__":
 # In[ ]:
 
 if __name__=="__main__":
-    data_root = 'data'
-    root      = 'result/test'
-    name_prc  = 'not_diff'
-    name_seq  = 'toy'
-    
-    verify_prc(data_root=data_root, root=root,
-               name_seq=name_seq, name_prc=name_prc,
-               verbose=True)
+    main_compare()
+
+
+# In[ ]:
+
+
 
