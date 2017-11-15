@@ -589,12 +589,11 @@ if __name__=="__main__":
 
 # In[ ]:
 
-def main_compare():
+def main_compare(name_prc):
     pred_baseline_root = 'data/pred_baseline'
     data_root = 'data'
     name_sequences = 'sequences'
     root      = 'result/test'
-    name_prc  = 'default'
     
     path_sequences = os.path.join(data_root, name_sequences)
     seqs = [ seq.rstrip()
@@ -643,7 +642,8 @@ if __name__=="__main__":
 # In[ ]:
 
 if __name__=="__main__":
-    main_compare()
+    name_prc='not_log'
+    main_compare(name_prc=name_prc)
 
 
 # In[ ]:
